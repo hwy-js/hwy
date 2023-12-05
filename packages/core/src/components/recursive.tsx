@@ -19,29 +19,28 @@ async function RootOutlet(props: {
   }) => Promise<HtmlEscapedString> | HtmlEscapedString;
 }): Promise<HtmlEscapedString> {
   const { index, activePathData: active_path_data } = props;
-
   const index_to_use = index ?? 0;
 
-  const CurrentComponent = active_path_data?.activeComponents?.[index_to_use];
-
-  if (!CurrentComponent) {
-    return <></>;
-  }
-
-  const current_data = active_path_data?.activeData?.[index_to_use];
-
-  const this_is_an_error_boundary =
-    active_path_data?.outermostErrorBoundaryIndex === index_to_use;
-
   try {
+    const CurrentComponent = active_path_data?.activeComponents?.[index_to_use];
+
+    if (!CurrentComponent) {
+      return <></>;
+    }
+
+    const current_data = active_path_data?.activeData?.[index_to_use];
+
+    const this_is_an_error_boundary =
+      active_path_data?.outermostErrorBoundaryIndex === index_to_use;
+
+    const ErrorBoundary: ErrorBoundaryComp | undefined =
+      active_path_data?.activeErrorBoundaries?.[index_to_use] ??
+      props.fallbackErrorBoundary;
+
     if (
       this_is_an_error_boundary ||
       active_path_data?.outermostErrorBoundaryIndex === -1
     ) {
-      const ErrorBoundary: ErrorBoundaryComp | undefined =
-        active_path_data?.activeErrorBoundaries?.[index_to_use] ??
-        props.fallbackErrorBoundary;
-
       if (!ErrorBoundary) {
         return <div>Error: No error boundary found.</div>;
       }

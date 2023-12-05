@@ -1,6 +1,6 @@
 {
   "name": "@hwy-js/client",
-  "version": "0.7.1",
+  "version": "0.8.0-beta.7",
   "author": {
     "name": "Samuel J. Cook"
   },
@@ -22,11 +22,11 @@
   },
   "devDependencies": {
     "@types/nprogress": "^0.2.3",
-    "htmx.org": "^1.9.8",
+    "htmx.org": "^1.9.9",
     "idiomorph": "^0.0.9",
     "nprogress": "^0.2.0",
-    "tsup": "^7.2.0",
-    "typescript": "^5.2.2"
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.2"
   },
   "peerDependencies": {
     "htmx.org": ">=1.9.6",

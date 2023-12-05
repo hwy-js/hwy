@@ -1,8 +1,9 @@
-import type { Paths } from "@hwy-js/build";
+import type { HwyConfig, Paths } from "@hwy-js/build";
 import { HWY_PREFIX, type DeploymentTarget } from "../../../common/index.mjs";
 
 type HwyGlobal = Partial<{
   deployment_target: DeploymentTarget;
+  route_strategy: NonNullable<HwyConfig["routeStrategy"]>;
   is_dev: boolean;
   critical_bundled_css: string;
   standard_bundled_css_exists: boolean;

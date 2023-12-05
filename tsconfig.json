@@ -7,9 +7,7 @@
     "strict": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
-    "esModuleInterop": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx"
+    "esModuleInterop": true
   },
   "exclude": ["node_modules", "dist"]
 }

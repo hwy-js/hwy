@@ -77,7 +77,13 @@ app.all("*", async (c, next) => {
           >
             <Sidebar />
             <main>
-              <RootOutlet activePathData={activePathData} c={c} />
+              <RootOutlet
+                activePathData={activePathData}
+                c={c}
+                fallbackErrorBoundary={function ErrorBoundary() {
+                  return <div>Error Boundary in Root</div>;
+                }}
+              />
             </main>
           </body>
         </html>

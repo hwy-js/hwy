@@ -6,22 +6,29 @@ import { get_hashed_public_url_low_level } from "./hashed-public-url.js";
 import { pathToFileURL } from "node:url";
 import { HWY_GLOBAL_KEYS } from "../../common/index.mjs";
 
+/*
+NOTE: This file assumes it's run (and therefore imported / initiated)
+only after the public-map.js file has been generated. That means you
+should import it lazily and only after the public-map.js file has been
+generated.
+*/
+
 const public_map_path = path.resolve("dist", "public-map.js");
 
 const public_map: Record<string, string> | undefined = (
   await import(pathToFileURL(public_map_path).href)
 )[HWY_GLOBAL_KEYS.public_map];
 
-const URL_REGEX = /url\(\s*['"]([^'"]*)['"]\s*\)/g;
+const URL_REGEX = /url\(\s*(?:(['"]?)(.*?)\1)\s*\)/gi;
 
-function replacer(_: string, p1: string) {
+function replacer(_: string, __: string, p2: string) {
   if (!public_map) {
     throw new Error("No public map found");
   }
 
   const hashed = get_hashed_public_url_low_level({
     public_map,
-    url: p1,
+    url: p2,
   });
 
   return `url("${hashed}")`;
@@ -105,6 +112,8 @@ async function bundle_css_files() {
         path.join(process.cwd(), "dist/critical-bundled-css.js"),
         `export const ${HWY_GLOBAL_KEYS.critical_bundled_css} = \`${css}\`;`,
       );
+
+      return css;
     } else {
       fs.writeFileSync(
         path.join(process.cwd(), "dist/critical-bundled-css.js"),
@@ -113,7 +122,12 @@ async function bundle_css_files() {
     }
   }
 
-  await Promise.all([build_standard_css(), build_critical_css()]);
+  const [_, critical_css] = await Promise.all([
+    build_standard_css(),
+    build_critical_css(),
+  ]);
+
+  return { critical_css };
 }
 
 export { bundle_css_files };

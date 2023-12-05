@@ -8,9 +8,7 @@
     "noImplicitAny": true,
     "skipLibCheck": true,
     "verbatimModuleSyntax": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx"
+    "noEmit": true
   },
   "exclude": ["node_modules", "dist"]
 }

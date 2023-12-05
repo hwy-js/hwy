@@ -5,4 +5,5 @@ export default {
     port: 1275,
   },
   deploymentTarget: "vercel-lambda",
+  routeStrategy: "bundle",
 } satisfies HwyConfig;

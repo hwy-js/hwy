@@ -24,6 +24,7 @@ app.all("*", async (c, next) => {
   return await renderRoot({
     c,
     next,
+    experimentalStreaming: true,
     root: ({ activePathData }) => {
       return (
         <html lang="en">

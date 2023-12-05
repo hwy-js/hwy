@@ -142,7 +142,6 @@ app.onError((error, c) => {
 
 export default handle(app);
 
-// if (IS_DEV) {
 serve({ fetch: app.fetch, port: Number(process.env.PORT || 3000) }, (info) => {
   console.log(
     `\nListening on http://${IS_DEV ? "localhost" : info.address}:${
@@ -150,4 +149,3 @@ serve({ fetch: app.fetch, port: Number(process.env.PORT || 3000) }, (info) => {
     }\n`,
   );
 });
-// }

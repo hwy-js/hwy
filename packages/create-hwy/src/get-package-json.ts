@@ -1,51 +1,114 @@
-import { DEFAULT_PORT } from "../../common/index.mjs";
 import type { Options } from "../index.js";
+import {
+  SCRIPTS_WATERFALL_MAP,
+  DEPS_WATERFALL_MAP,
+  DEV_DEPS_WATERFALL_MAP,
+} from "./waterfall-maps.js";
 import { get_is_target_deno } from "./utils.js";
-import fs from "node:fs";
 
-const pkg_json = JSON.parse(
-  fs.readFileSync(new URL("../package.json", import.meta.url), "utf-8"),
-);
-
-const third_party_packages = [
-  "@hono/node-server",
-  "hono",
-  "htmx.org",
-  "typescript",
-  "tailwindcss",
-  "nprogress",
-  "@types/nprogress",
-  "@types/node",
-  "bun-types",
-  "@cloudflare/workers-types",
-  "npm-run-all",
-  "wrangler",
-  "idiomorph",
-  "@css-hooks/core",
-] as const;
-
-const versions_map = third_party_packages.map((pkg) => {
-  return [pkg, pkg_json.devDependencies[pkg]];
-});
-
-const VERSIONS = Object.fromEntries(versions_map) as Record<
-  (typeof third_party_packages)[number],
-  string
->;
-
-export const LATEST_HWY_VERSION = "^" + pkg_json.version;
+// QUESTIONS
+// Question 1 -- TS or JS
+// Question 2 -- Vanilla, Tailwind, or CSS Hooks
+// Question 3 -- Node, Vercel, Cloudflare Pages, Bun, Deno, or Deno Deploy
+// Question 4 -- NProgress?
 
 function get_package_json(options: Options) {
-  /* TAILWIND PREBUILD */
-  let tailwind_prebuild = {};
-  if (options.css_preference === "tailwind") {
-    tailwind_prebuild = {
-      "hwy-prebuild":
-        "tailwindcss -i src/styles/tw-input.css -o src/styles/tw-output.bundle.css",
-    };
+  const IS_DENO = get_is_target_deno(options);
+  const IS_BUN = options.deployment_target === "bun";
+  const IS_JAVASCRIPT = options.lang_preference === "javascript";
+  const IS_TYPESCRIPT = options.lang_preference === "typescript";
+  const IS_VERCEL = options.deployment_target === "vercel-lambda";
+  const IS_TAILWIND = options.css_preference === "tailwind";
+  const IS_CF_PAGES = options.deployment_target === "cloudflare-pages";
+  const IS_NODE = !IS_DENO && !IS_BUN;
+  const IS_NPROGRESS = options.with_nprogress;
+
+  const STATE = {
+    // SCRIPTS
+    BASE: true,
+    IS_TYPESCRIPT,
+    IS_VERCEL_JAVASCRIPT: IS_VERCEL && IS_JAVASCRIPT,
+    IS_VERCEL_TYPESCRIPT: IS_VERCEL && IS_TYPESCRIPT,
+    IS_DENO,
+    IS_BUN,
+    IS_TAILWIND,
+    IS_DENO_TAILWIND: IS_DENO && IS_TAILWIND,
+    IS_BUN_TAILWIND: IS_BUN && IS_TAILWIND,
+    IS_CF_PAGES,
+
+    // DEPS, if not above
+    IS_CSS_HOOKS: options.css_preference === "css-hooks",
+    IS_NODE,
+
+    // DEV DEPS, if not above
+    IS_CLOUDFLARE_TYPESCRIPT: IS_CF_PAGES && IS_TYPESCRIPT,
+    IS_BUN_TYPESCRIPT: IS_BUN && IS_TYPESCRIPT,
+    IS_NODE_TYPESCRIPT: IS_NODE && IS_TYPESCRIPT,
+    IS_NPROGRESS,
+    IS_NPROGRESS_TYPESCRIPT: IS_NPROGRESS && IS_TYPESCRIPT,
+    IS_NPM_RUN_ALL: IS_CF_PAGES || (!IS_DENO && IS_TAILWIND),
+  } as const;
+
+  let scripts = {} as Record<string, any>;
+
+  for (const [key, value] of SCRIPTS_WATERFALL_MAP) {
+    if (STATE[key]) {
+      scripts = { ...scripts, ...value };
+    }
   }
 
-  const is_targeting_deno = get_is_target_deno(options);
+  let dependencies = {} as Record<string, any>;
+
+  for (const [key, value] of DEPS_WATERFALL_MAP) {
+    if (STATE[key]) {
+      dependencies = { ...dependencies, ...value };
+    }
+  }
+
+  let devDependencies = {} as Record<string, any>;
+
+  for (const [key, value] of DEV_DEPS_WATERFALL_MAP) {
+    if (STATE[key]) {
+      devDependencies = { ...devDependencies, ...value };
+    }
+  }
+
+  // sort scripts
+  const scripts_keys = Object.keys(scripts);
+  // sort once alphabetically, adjusting for "vercel-build"
+  scripts_keys.sort(function (a, b) {
+    // treat "vercel-build" like it were "build"
+    if (a === "vercel-build") a = "build";
+    if (b === "vercel-build") b = "build";
+    return a.localeCompare(b);
+  });
+  // sort again, sub-script first (e.g. "build:css" before "build")
+  scripts_keys.sort(function (a, b) {
+    const a_has_colon = a.includes(":");
+    const b_has_colon = b.includes(":");
+    if (a_has_colon && !b_has_colon && a.startsWith(b)) {
+      return -1;
+    } else if (!a_has_colon && b_has_colon && b.startsWith(a)) {
+      return 1;
+    } else {
+      return 0;
+    }
+  });
+  scripts = Object.fromEntries(scripts_keys.map((key) => [key, scripts[key]]));
+
+  // sort dependencies
+  const dependencies_keys = Object.keys(dependencies);
+  dependencies_keys.sort();
+  dependencies = Object.fromEntries(
+    dependencies_keys.map((key) => [key, dependencies[key]]),
+  );
+
+  // sort devDependencies
+  const devDependencies_keys = Object.keys(devDependencies);
+  devDependencies_keys.sort();
+  devDependencies = Object.fromEntries(
+    devDependencies_keys.map((key) => [key, devDependencies[key]]),
+  );
 
   return (
     JSON.stringify(
@@ -53,90 +116,16 @@ function get_package_json(options: Options) {
         name: options.project_name,
         private: true,
         type: "module",
-        scripts: {
-          ...tailwind_prebuild,
-          [options.deployment_target === "vercel-lambda"
-            ? "vercel-build"
-            : "build"]:
-            (options.lang_preference === "typescript" && !is_targeting_deno
-              ? "tsc --noEmit && "
-              : "") + "hwy-build",
-          ...(options.deployment_target === "cloudflare-pages"
-            ? {
-                "dev:serve": "hwy-dev-serve",
-                "dev:wrangler": `wrangler pages dev ./dist --compatibility-flag="nodejs_compat" --port=${DEFAULT_PORT} --live-reload`,
-              }
-            : {
-                start: get_is_target_deno(options)
-                  ? "deno run -A dist/main.js"
-                  : options.deployment_target === "bun"
-                  ? "bun dist/main.js"
-                  : "node dist/main.js",
-              }),
-          dev:
-            options.deployment_target === "cloudflare-pages"
-              ? "npm run build && npm-run-all --parallel dev:*"
-              : "hwy-dev-serve",
-        },
-        dependencies: {
-          ...(options.css_preference === "css-hooks"
-            ? {
-                "@css-hooks/core": VERSIONS["@css-hooks/core"],
-              }
-            : {}),
-          ...(!is_targeting_deno && options.deployment_target !== "bun"
-            ? { "@hono/node-server": VERSIONS["@hono/node-server"] }
-            : {}),
-          hono: VERSIONS["hono"],
-          hwy: LATEST_HWY_VERSION,
-        },
-        devDependencies: {
-          ...(options.deployment_target === "cloudflare-pages" &&
-          options.lang_preference === "typescript"
-            ? {
-                "@cloudflare/workers-types":
-                  VERSIONS["@cloudflare/workers-types"],
-              }
-            : {}),
-          "@hwy-js/build": LATEST_HWY_VERSION,
-          "@hwy-js/client": LATEST_HWY_VERSION,
-          "@hwy-js/dev": LATEST_HWY_VERSION,
-          "@hwy-js/utils": LATEST_HWY_VERSION,
-          ...(options.lang_preference === "typescript"
-            ? {
-                ...(!is_targeting_deno && options.deployment_target !== "bun"
-                  ? { "@types/node": VERSIONS["@types/node"] }
-                  : {}),
-                ...(options.with_nprogress
-                  ? { "@types/nprogress": VERSIONS["@types/nprogress"] }
-                  : {}),
-              }
-            : {}),
-          ...(options.deployment_target === "bun" &&
-          options.lang_preference === "typescript"
-            ? { "bun-types": VERSIONS["bun-types"] }
-            : {}),
-          "htmx.org": VERSIONS["htmx.org"],
-          idiomorph: VERSIONS["idiomorph"],
-          ...(options.deployment_target === "cloudflare-pages"
-            ? { "npm-run-all": VERSIONS["npm-run-all"] }
-            : {}),
-          ...(options.with_nprogress
-            ? { nprogress: VERSIONS["nprogress"] }
-            : {}),
-          ...(options.css_preference === "tailwind"
-            ? { tailwindcss: VERSIONS["tailwindcss"] }
-            : {}),
-          ...(options.lang_preference === "typescript"
-            ? { typescript: VERSIONS["typescript"] }
-            : {}),
-          ...(options.deployment_target === "cloudflare-pages"
-            ? { wrangler: VERSIONS["wrangler"] }
-            : {}),
-        },
-        engines: {
-          node: ">=18.14.1",
-        },
+        scripts,
+        dependencies,
+        devDependencies,
+        ...(IS_NODE
+          ? {
+              engines: {
+                node: ">=18.14.1",
+              },
+            }
+          : {}),
       },
       null,
       2,

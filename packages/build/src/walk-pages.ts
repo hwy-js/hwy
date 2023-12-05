@@ -165,7 +165,7 @@ async function walk_pages() {
   return paths;
 }
 
-async function write_paths_to_file() {
+async function write_paths_to_disk() {
   const paths = await walk_pages();
 
   fs.writeFileSync(
@@ -241,5 +241,5 @@ async function generate_public_file_map() {
   ]);
 }
 
-export { generate_file_hash, write_paths_to_file, generate_public_file_map };
+export { generate_file_hash, write_paths_to_disk, generate_public_file_map };
 export type Paths = Awaited<ReturnType<typeof walk_pages>>;

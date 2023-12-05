@@ -16,6 +16,8 @@ async function TesterComp({ Outlet, params, splatSegments }: PageProps) {
           <p>Params: {JSON.stringify(params)}</p>
         ) : null}
 
+        {/* <ErrorComp /> */}
+
         <Outlet />
       </div>
     </div>
@@ -23,3 +25,8 @@ async function TesterComp({ Outlet, params, splatSegments }: PageProps) {
 }
 
 export { TesterComp };
+
+function ErrorComp() {
+  throw new Error("BOB");
+  return <></>;
+}

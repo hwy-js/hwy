@@ -1,25 +1,63 @@
-import { LIVE_REFRESH_SSE_PATH } from "../../../common/index.mjs";
+import {
+  CRITICAL_CSS_ELEMENT_ID,
+  LIVE_REFRESH_SSE_PATH,
+} from "../../../common/index.mjs";
 import { get_hwy_global } from "../utils/get-hwy-global.js";
-
-const get_dev_live_refresh_script_inner_html = (timeout_ms = 300) => {
-  const statement_1 = `let es=new EventSource('${LIVE_REFRESH_SSE_PATH}');`;
-  const statement_2 = `es.addEventListener('message',(ev)=>{if(ev.data=='reload')setTimeout(()=>window.location.reload(),${timeout_ms})});`;
-  return statement_1 + statement_2;
-};
+import { DEV_BUNDLED_CSS_LINK } from "../utils/hashed-public-url.js";
 
 const hwy_global = get_hwy_global();
 
-function DevLiveRefreshScript(props?: { timeoutInMs?: number }) {
-  if (
+function getShouldUseRefresh() {
+  return Boolean(
     hwy_global.get("is_dev") &&
-    // Wrangler does its own live reload
-    hwy_global.get("deployment_target") !== "cloudflare-pages"
-  ) {
+      // Wrangler does its own live reload
+      hwy_global.get("deployment_target") !== "cloudflare-pages",
+  );
+}
+
+const getRefreshScript = (timeoutInMs = 300) => {
+  if (!getShouldUseRefresh()) {
+    return "";
+  }
+
+  return `
+  new EventSource("${LIVE_REFRESH_SSE_PATH}").addEventListener("message", (e) => {
+    const { changeType, criticalCss } = JSON.parse(e.data);
+    function refresh() {
+      if (changeType === "css-bundle") {
+        for (const link of document.querySelectorAll('link[rel="stylesheet"]')) {
+          const url = new URL(link.href);
+          if (
+            url.host === location.host &&
+            url.pathname.startsWith("/public/dist/standard-bundled.")
+          ) {
+            const next = link.cloneNode();
+            next.href = "${DEV_BUNDLED_CSS_LINK}";
+            next.onload = () => link.remove();
+            link.parentNode?.insertBefore(next, link.nextSibling);
+          }
+        }
+      } else if (changeType === "critical-css") {
+        const inline_style_el = document.getElementById("${CRITICAL_CSS_ELEMENT_ID}");
+        if (inline_style_el) {
+          inline_style_el.innerHTML = criticalCss;
+        }
+      } else {
+        setTimeout(() => window.location.reload(), ${timeoutInMs});
+      }
+    }
+    refresh();
+  });
+  `.trim();
+};
+
+function DevLiveRefreshScript(props?: { timeoutInMs?: number }) {
+  if (getShouldUseRefresh()) {
     return (
       <script
         type="module"
         dangerouslySetInnerHTML={{
-          __html: get_dev_live_refresh_script_inner_html(props?.timeoutInMs),
+          __html: getRefreshScript(props?.timeoutInMs),
         }}
       />
     );
@@ -28,4 +66,4 @@ function DevLiveRefreshScript(props?: { timeoutInMs?: number }) {
   return <></>;
 }
 
-export { DevLiveRefreshScript };
+export { DevLiveRefreshScript, getRefreshScript };

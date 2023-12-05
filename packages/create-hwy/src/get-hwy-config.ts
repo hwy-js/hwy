@@ -15,7 +15,7 @@ function get_hwy_config(options: Options) {
   if (options.css_preference === "tailwind") {
     obj.dev = {
       ...obj.dev,
-      watchExclusions: ["src/styles/tw-output.bundle.css"],
+      watchExclusions: ["src/styles/tw-input.css"],
     };
   }
 

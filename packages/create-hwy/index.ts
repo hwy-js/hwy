@@ -3,10 +3,7 @@ import * as path from "node:path";
 import pc from "picocolors";
 import inquirer from "inquirer";
 import { fileURLToPath } from "node:url";
-import {
-  LATEST_HWY_VERSION,
-  get_package_json,
-} from "./src/get-package-json.js";
+import { get_package_json } from "./src/get-package-json.js";
 import { get_tailwind_config } from "./src/get-tailwind-config.js";
 import { get_ts_config } from "./src/get-tsconfig.js";
 import { get_readme } from "./src/get-readme.js";
@@ -19,6 +16,7 @@ import { format } from "prettier";
 import type { DeploymentTarget } from "../common/index.mjs";
 import { get_hwy_config } from "./src/get-hwy-config.js";
 import { get_css_hooks_setup } from "./src/get-css-hooks-setup.js";
+import { LATEST_HWY_VERSION } from "./src/waterfall-maps.js";
 
 type Options = {
   project_name: string;
@@ -115,22 +113,22 @@ function get_options(
       choices.css_choice === "Tailwind"
         ? "tailwind"
         : choices.css_choice === "CSS Hooks"
-        ? "css-hooks"
-        : "vanilla",
+          ? "css-hooks"
+          : "vanilla",
     lang_preference:
       choices.lang_preference === "TypeScript" ? "typescript" : "javascript",
     deployment_target:
       choices.deployment_target === "Vercel (Lambda)"
         ? "vercel-lambda"
         : choices.deployment_target === "Deno Deploy"
-        ? "deno-deploy"
-        : choices.deployment_target === "Deno"
-        ? "deno"
-        : choices.deployment_target === "Bun"
-        ? "bun"
-        : choices.deployment_target === "Cloudflare Pages"
-        ? "cloudflare-pages"
-        : "node",
+          ? "deno-deploy"
+          : choices.deployment_target === "Deno"
+            ? "deno"
+            : choices.deployment_target === "Bun"
+              ? "bun"
+              : choices.deployment_target === "Cloudflare Pages"
+                ? "cloudflare-pages"
+                : "node",
   } satisfies Options;
 }
 
@@ -438,8 +436,8 @@ async function main() {
       options.deployment_target === "bun"
         ? bun_instructions
         : get_is_target_deno(options)
-        ? deno_instructions
-        : npm_instructions;
+          ? deno_instructions
+          : npm_instructions;
 
     console.log(
       pc.cyan(

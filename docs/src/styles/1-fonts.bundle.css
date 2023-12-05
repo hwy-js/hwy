@@ -5,7 +5,7 @@
   font-weight: 300;
   src:
     local(""),
-    url("fonts/jetbrains-mono-v6-latin-300.woff2") format("woff2");
+    url(fonts/jetbrains-mono-v6-latin-300.woff2) format("woff2");
   font-display: swap;
 }
 
@@ -16,7 +16,7 @@
   font-weight: 700;
   src:
     local(""),
-    url("fonts/jetbrains-mono-v6-latin-700.woff2") format("woff2");
+    url(fonts/jetbrains-mono-v6-latin-700.woff2) format("woff2");
   font-display: swap;
 }
 
@@ -27,7 +27,7 @@
   font-weight: 300;
   src:
     local(""),
-    url("fonts/jetbrains-mono-v6-latin-300italic.woff2") format("woff2");
+    url(fonts/jetbrains-mono-v6-latin-300italic.woff2) format("woff2");
   font-display: swap;
 }
 
@@ -38,6 +38,6 @@
   font-weight: 700;
   src:
     local(""),
-    url("fonts/jetbrains-mono-v6-latin-700italic.woff2") format("woff2");
+    url(fonts/jetbrains-mono-v6-latin-700italic.woff2) format("woff2");
   font-display: swap;
 }

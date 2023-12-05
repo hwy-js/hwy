@@ -32,7 +32,7 @@ function makeCookieEventHelpers<T extends CookieEventDetails>() {
     name: E;
     detail: T[E];
   }) {
-    setCookie(c, name, JSON.stringify(detail));
+    setCookie(c, name, JSON.stringify(detail), { path: "/" });
   }
 
   function setupCookieEventListeners(listeners: {

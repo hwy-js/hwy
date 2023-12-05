@@ -1,10 +1,10 @@
-import { getPublicUrl } from "../utils/hashed-public-url.js";
 import { get_hwy_global } from "../utils/get-hwy-global.js";
+import { utils } from "../utils/hwy-utils.js";
 
 const hwy_global = get_hwy_global();
 
 function CriticalCss() {
-  const critical_css = hwy_global.get("critical_bundled_css");
+  const critical_css = utils.getCriticalCss();
 
   if (!critical_css) {
     return <></>;
@@ -12,14 +12,13 @@ function CriticalCss() {
 
   return (
     <style
+      id={utils.getCriticalCssElementId()}
       dangerouslySetInnerHTML={{
         __html: critical_css,
       }}
     ></style>
   );
 }
-
-const CSS_IMPORT_URL = `dist/standard-bundled.css`;
 
 function NonCriticalCss() {
   const standard_bundled_css_exists = hwy_global.get(
@@ -30,7 +29,7 @@ function NonCriticalCss() {
     return <></>;
   }
 
-  return <link rel="stylesheet" href={getPublicUrl(CSS_IMPORT_URL)} />;
+  return <link rel="stylesheet" href={utils.getBundledCssUrl()} />;
 }
 
 function CssImports() {
@@ -42,10 +41,4 @@ function CssImports() {
   );
 }
 
-export {
-  // public
-  CssImports,
-
-  // private
-  CSS_IMPORT_URL,
-};
+export { CssImports };

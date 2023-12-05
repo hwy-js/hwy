@@ -1,6 +1,6 @@
 {
   "name": "@hwy-js/utils",
-  "version": "0.7.1",
+  "version": "0.8.0-beta.7",
   "author": {
     "name": "Samuel J. Cook"
   },
@@ -21,9 +21,9 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "hono": "^3.10.1",
-    "tsup": "^7.2.0",
-    "typescript": "^5.2.2"
+    "hono": "^3.11.1",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.2"
   },
   "repository": {
     "type": "git",
