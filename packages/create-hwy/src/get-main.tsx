@@ -1,5 +1,5 @@
 import { DEFAULT_PORT } from "../../common/index.mjs";
-import type { Options } from "../index.js";
+import { Options } from "../index.js";
 import { get_is_target_deno } from "./utils.js";
 
 let imports = `
@@ -39,10 +39,10 @@ function get_main(options: Options) {
     (is_targeting_deno
       ? deno_imports
       : options.deployment_target === "bun"
-      ? bun_imports
-      : options.deployment_target === "cloudflare-pages"
-      ? ""
-      : node_imports);
+        ? bun_imports
+        : options.deployment_target === "cloudflare-pages"
+          ? ""
+          : node_imports);
 
   if (options.deployment_target === "vercel-lambda") {
     imports =
@@ -169,7 +169,6 @@ app.all("*", async (c, next) => {
   
             <main>
               <RootOutlet
-                c={c}
                 activePathData={activePathData}
                 fallbackErrorBoundary={() => {
                   return <div>Something went wrong.</div>;
@@ -194,12 +193,12 @@ ${
   options.deployment_target === "vercel-lambda"
     ? serve_fn_vercel
     : is_targeting_deno
-    ? serve_fn_deno
-    : options.deployment_target === "bun"
-    ? serve_fn_bun
-    : options.deployment_target === "cloudflare-pages"
-    ? serve_fn_cloudflare_pages
-    : serve_fn_node
+      ? serve_fn_deno
+      : options.deployment_target === "bun"
+        ? serve_fn_bun
+        : options.deployment_target === "cloudflare-pages"
+          ? serve_fn_cloudflare_pages
+          : serve_fn_node
 }
 `.trim() +
     "\n"

@@ -1,16 +1,56 @@
-import path from "node:path";
-import type { Context } from "hono";
-import { matcher } from "../router/matcher.js";
-import type { Paths } from "@hwy-js/build";
-import { ROOT_DIRNAME } from "../setup.js";
-import { get_matching_paths_internal } from "./get-matching-path-data-internal.js";
+import { Context } from "hono";
+
+import {
+  ActivePathData,
+  DataProps,
+  HWY_PREFIX,
+  Paths,
+  SPLAT_SEGMENT,
+  get_hwy_global,
+} from "../../../common/index.mjs";
 import { get_match_strength } from "./get-match-strength.js";
-import type { DataProps } from "../types.js";
-import { path_to_file_url_string } from "../utils/url-polyfills.js";
-import { get_hwy_global } from "../utils/get-hwy-global.js";
-import { SPLAT_SEGMENT } from "../../../common/index.mjs";
+import { get_matching_paths_internal } from "./get-matching-path-data-internal.js";
+import { matcher } from "./matcher.js";
+
+import { ROOT_DIRNAME } from "../setup.js";
+import { get_is_json_request } from "../utils/get-root-data.js";
+import { node_path, path_to_file_url_string } from "../utils/url-polyfills.js";
 
 const hwy_global = get_hwy_global();
+
+async function get_path(import_path: string) {
+  const route_strategy = hwy_global.get("hwy_config").routeStrategy;
+
+  const arbitrary_global = (globalThis as any)[Symbol.for(HWY_PREFIX)];
+
+  if (!arbitrary_global) {
+    (globalThis as any)[Symbol.for(HWY_PREFIX)] = {};
+  }
+
+  let _path = arbitrary_global["./" + import_path];
+
+  // If "bundle" this should definitely be true
+  // If "warm-cache-at-startup" or "lazy-once-then-cache", this might be true
+  // If "always-lazy", this should definitely be false
+  if (_path) {
+    return _path;
+  }
+
+  const inner = node_path?.join(
+    hwy_global.get("test_dirname") || ROOT_DIRNAME || "./",
+    import_path,
+  );
+
+  if (route_strategy === "always-lazy") {
+    return import(path_to_file_url_string(inner));
+  }
+
+  _path = await import(path_to_file_url_string(inner));
+
+  arbitrary_global["./" + import_path] = _path;
+
+  return _path;
+}
 
 function fully_decorate_paths({
   matching_paths,
@@ -21,64 +61,94 @@ function fully_decorate_paths({
 }) {
   return (
     matching_paths?.map((_path) => {
-      const get_imported = () => {
-        if (hwy_global.get("deployment_target") === "cloudflare-pages") {
-          return (globalThis as any)["./" + _path.importPath];
-        }
+      const server_import_path =
+        !_path.isServerFile && hwy_global.get("hwy_config").useDotServerFiles
+          ? _path.importPath.replace(".page.js", ".server.js")
+          : _path.importPath;
 
-        const inner = path.join(
-          hwy_global.get("test_dirname") || ROOT_DIRNAME || "./",
-          _path.importPath,
-        );
+      const NO_SERVER_FUNCTIONS =
+        hwy_global.get("hwy_config").useDotServerFiles &&
+        !_path.hasSiblingServerFile &&
+        !_path.isServerFile;
 
-        return import(path_to_file_url_string(inner));
-      };
+      const NO_CLIENT_FUNCTIONS = _path.isServerFile;
 
       // public
       return {
         hasSiblingClientFile: _path.hasSiblingClientFile,
+        hasSiblingServerFile: _path.hasSiblingServerFile,
+        isServerFile: _path.isServerFile,
         importPath: _path.importPath,
         params: _path.params,
         pathType: _path.pathType,
         splatSegments: splat_segments,
+
+        // ON CLIENT
         componentImporter: async () => {
+          if (NO_CLIENT_FUNCTIONS) return;
+
           try {
-            const imported = await get_imported();
+            const imported = await get_path(_path.importPath);
             return imported.default;
           } catch (e) {
             console.error(e);
             throw e;
           }
         },
-        errorBoundaryImporter: async () => {
+
+        fallbackImporter: async () => {
+          if (NO_CLIENT_FUNCTIONS) return;
+
           try {
-            const imported = await get_imported();
+            const imported = await get_path(_path.importPath);
+            return imported.Fallback ? imported.Fallback : undefined;
+          } catch (e) {
+            console.error(e);
+            throw e;
+          }
+        },
+
+        errorBoundaryImporter: async () => {
+          if (NO_CLIENT_FUNCTIONS) return;
+
+          try {
+            const imported = await get_path(_path.importPath);
             return imported.ErrorBoundary ? imported.ErrorBoundary : undefined;
           } catch (e) {
             console.error(e);
             throw e;
           }
         },
+
+        // REST ON SERVER
         headImporter: async () => {
+          if (NO_SERVER_FUNCTIONS) return () => [];
+
           try {
-            const imported = await get_imported();
+            const imported = await get_path(server_import_path);
             return imported.head ? imported.head : () => [];
           } catch (e) {
             console.error(e);
             throw e;
           }
         },
+
         loader: async (loaderArgs: DataProps) => {
+          if (NO_SERVER_FUNCTIONS) return;
+
           try {
-            const imported = await get_imported();
+            const imported = await get_path(server_import_path);
             return imported.loader ? imported.loader(loaderArgs) : undefined;
           } catch (e) {
             return handle_caught_maybe_response(e);
           }
         },
+
         action: async (actionArgs: DataProps) => {
+          if (NO_SERVER_FUNCTIONS) return;
+
           try {
-            const imported = await get_imported();
+            const imported = await get_path(server_import_path);
             return imported.action ? imported.action(actionArgs) : undefined;
           } catch (e) {
             return handle_caught_maybe_response(e);
@@ -161,7 +231,7 @@ async function getMatchingPathData({ c }: { c: Context }) {
 
   const active_paths = matching_paths?.map((path) => path.pattern);
 
-  const fully_decorated_matching_paths = fully_decorate_paths({
+  let fully_decorated_matching_paths = fully_decorate_paths({
     matching_paths,
     splat_segments,
   });
@@ -180,30 +250,11 @@ async function getMatchingPathData({ c }: { c: Context }) {
     action_data_error = e;
   }
 
-  let [
-    active_data_obj,
-    active_components,
-    active_heads,
-    active_error_boundaries,
-  ] = await Promise.all([
-    Promise.all(
-      (fully_decorated_matching_paths || [])?.map(async (path) => {
-        return path
-          ?.loader?.({
-            c,
-            params,
-            splatSegments: splat_segments,
-          })
-          .then((result) => ({ error: undefined, result }))
-          .catch((error) => {
-            if (error instanceof Response)
-              return { result: error, error: undefined };
-            console.error("Loader error:", error);
-            return { error, result: undefined };
-          });
-      }),
-    ),
+  if (action_data instanceof Response && last_path.isServerFile) {
+    return { fetchResponse: action_data };
+  }
 
+  let [active_components, active_fallbacks] = await Promise.all([
     Promise.all(
       (fully_decorated_matching_paths || [])?.map((path) => {
         return path?.componentImporter();
@@ -211,17 +262,70 @@ async function getMatchingPathData({ c }: { c: Context }) {
     ),
 
     Promise.all(
-      (fully_decorated_matching_paths || []).map((path) => {
-        return path?.headImporter();
-      }),
-    ),
-
-    Promise.all(
-      (fully_decorated_matching_paths || []).map((path) => {
-        return path?.errorBoundaryImporter();
+      (fully_decorated_matching_paths || [])?.map((path) => {
+        return path?.fallbackImporter();
       }),
     ),
   ]);
+
+  let first_fallback_index = active_fallbacks.findIndex((x) => x);
+
+  const is_json_request = get_is_json_request({ c });
+
+  if (is_json_request) {
+    first_fallback_index = -1;
+  }
+
+  if (first_fallback_index !== -1) {
+    active_components = [
+      ...active_components.slice(0, first_fallback_index),
+      active_fallbacks[first_fallback_index],
+    ];
+
+    fully_decorated_matching_paths.splice(first_fallback_index + 1);
+
+    active_paths.splice(first_fallback_index + 1);
+  }
+
+  let [active_data_obj, active_heads, active_error_boundaries] =
+    await Promise.all([
+      Promise.all(
+        (first_fallback_index === -1
+          ? fully_decorated_matching_paths || []
+          : fully_decorated_matching_paths?.slice(
+              0,
+              fully_decorated_matching_paths.length - 1,
+            )
+        ).map(async (path) => {
+          return path
+            ?.loader?.({
+              c,
+              params,
+              splatSegments: splat_segments,
+            })
+            .then((result) => ({ error: undefined, result }))
+            .catch((error) => {
+              if (error instanceof Response) {
+                return { result: error, error: undefined };
+              }
+              console.error("Loader error:", error);
+              return { error, result: undefined };
+            });
+        }),
+      ),
+
+      Promise.all(
+        (fully_decorated_matching_paths || []).map((path) => {
+          return path?.headImporter();
+        }),
+      ),
+
+      Promise.all(
+        (fully_decorated_matching_paths || []).map((path) => {
+          return path?.errorBoundaryImporter();
+        }),
+      ),
+    ]);
 
   const errors = active_data_obj.map((item) => item.error);
   const active_data = active_data_obj.map((item) => item.result);
@@ -230,27 +334,31 @@ async function getMatchingPathData({ c }: { c: Context }) {
     action_data_error || errors.some((error) => error),
   );
 
-  let highest_error_index = errors?.findIndex((error) => error);
+  let outermost_error_index = errors?.findIndex((error) => error);
 
   if (action_data_error) {
-    highest_error_index = active_data_obj.length - 1;
+    const action_data_error_index = active_data_obj.length - 1;
+
+    if (there_are_errors && action_data_error_index < outermost_error_index) {
+      outermost_error_index = action_data_error_index;
+    }
   }
 
   let closest_parent_error_boundary_index;
 
   if (
     there_are_errors &&
-    highest_error_index !== undefined &&
-    highest_error_index !== -1
+    outermost_error_index !== undefined &&
+    outermost_error_index !== -1
   ) {
     closest_parent_error_boundary_index = active_error_boundaries
-      .slice(0, highest_error_index + 1)
+      .slice(0, outermost_error_index + 1)
       .reverse()
       .findIndex((boundary) => boundary != null);
 
     if (closest_parent_error_boundary_index !== -1) {
       closest_parent_error_boundary_index =
-        highest_error_index - closest_parent_error_boundary_index;
+        outermost_error_index - closest_parent_error_boundary_index;
     }
 
     if (
@@ -273,31 +381,62 @@ async function getMatchingPathData({ c }: { c: Context }) {
 
   if (responses.length) {
     return {
-      fetchResponse: responses[responses.length - 1],
+      fetchResponse: responses[responses.length - 1] as Response,
     };
   }
 
-  const should_render_loader_error =
-    highest_error_index < active_data_obj.length - 1 ||
-    (highest_error_index === active_data_obj.length - 1 && !action_data_error);
+  if (there_are_errors) {
+    const error_payload = {
+      // not needed in recursive component
+      matchingPaths: fully_decorated_matching_paths.slice(
+        0,
+        outermost_error_index + 1, // adding one because it's still an active path, we just only want boundary
+      ),
+      activeHeads: active_heads.slice(0, outermost_error_index),
+      fallbackIndex: first_fallback_index,
 
-  const error_to_render = should_render_loader_error
-    ? errors[highest_error_index]
-    : action_data_error;
+      // needed in recursive component
+      activeData: active_data.slice(0, outermost_error_index), // loader data for active routes
+      activePaths: active_paths.slice(
+        0,
+        outermost_error_index + 1, // adding one because it's still an active path, we just only want boundary
+      ),
+      outermostErrorBoundaryIndex: closest_parent_error_boundary_index,
+      splatSegments: splat_segments,
+      params,
+      actionData: fully_decorated_matching_paths
+        .slice(0, outermost_error_index)
+        .map((x) => {
+          return null;
+        }),
+      activeComponents: active_components.slice(0, outermost_error_index), // list of import paths for active routes
+      activeErrorBoundaries: active_error_boundaries.slice(
+        0,
+        outermost_error_index + 1,
+      ),
+    } satisfies ActivePathData;
+
+    return error_payload;
+  }
 
   return {
+    // not needed in recursive component
     matchingPaths: fully_decorated_matching_paths,
-    activeData: active_data,
-    actionData: action_data,
-    activePaths: active_paths,
-    activeComponents: active_components,
     activeHeads: active_heads,
-    errorToRender: error_to_render,
-    activeErrorBoundaries: active_error_boundaries,
-    params,
-    splatSegments: splat_segments,
+    fallbackIndex: first_fallback_index,
+
+    // needed in recursive component
+    activeData: active_data, // loader data for active routes
+    activePaths: active_paths,
     outermostErrorBoundaryIndex: closest_parent_error_boundary_index,
-  };
+    splatSegments: splat_segments,
+    params,
+    actionData: fully_decorated_matching_paths?.map((x) => {
+      return x.importPath === last_path?.importPath ? action_data : null;
+    }),
+    activeComponents: active_components, // list of import paths for active routes
+    activeErrorBoundaries: active_error_boundaries,
+  } satisfies ActivePathData;
 }
 
 function handle_caught_maybe_response(e: any) {

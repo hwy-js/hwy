@@ -8,7 +8,7 @@ export const head: HeadFunction = () => {
     },
     {
       tag: "meta",
-      props: {
+      attributes: {
         name: "description",
         content: "bear",
       },

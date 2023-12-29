@@ -1,83 +1,53 @@
-import {
-  hwyInit,
-  CssImports,
-  RootOutlet,
-  DevLiveRefreshScript,
-  ClientScripts,
-  HeadElements,
-  HeadBlock,
-  renderRoot,
-  getDefaultBodyProps,
-} from "hwy";
-import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
+import { RootOutlet } from "@hwy-js/client";
+import { Hono } from "hono";
+import {
+  ClientScripts,
+  CssImports,
+  DevLiveRefreshScript,
+  HeadElements,
+  hwyInit,
+  renderRoot,
+} from "hwy";
 import { Sidebar } from "./components/sidebar.js";
-import { hooks, CssHooksStyleSheet } from "./setup/css-hooks.js";
 
-const app = new Hono();
-
-const IS_DEV = process.env.NODE_ENV === "development";
-
-await hwyInit({
-  app,
+const { app } = await hwyInit({
+  app: new Hono(),
   importMetaUrl: import.meta.url,
   serveStatic,
 });
-
-const default_head_blocks: HeadBlock[] = [
-  { title: "Tester" },
-  {
-    tag: "meta",
-    props: {
-      name: "htmx-config",
-      content: JSON.stringify({
-        defaultSwapStyle: "outerHTML",
-        selfRequestsOnly: true,
-        refreshOnHistoryMiss: true,
-      }),
-    },
-  },
-];
 
 app.all("*", async (c, next) => {
   return await renderRoot({
     c,
     next,
-    root: ({ activePathData }) => {
+    defaultHeadBlocks: [],
+    root: function (routeData) {
       return (
         <html lang="en">
           <head>
-            <meta charset="UTF-8" />
+            <meta charSet="UTF-8" />
             <meta
               name="viewport"
               content="width=device-width,initial-scale=1"
             />
 
-            <HeadElements
-              activePathData={activePathData}
-              c={c}
-              defaults={default_head_blocks}
-            />
-
+            <HeadElements {...routeData} />
             <CssImports />
-            <ClientScripts activePathData={activePathData} />
+            <ClientScripts {...routeData} />
             <DevLiveRefreshScript />
-            <CssHooksStyleSheet />
           </head>
 
-          <body
-            {...getDefaultBodyProps({ idiomorph: true })}
-            style={hooks({
-              background: "orange",
-              dark: {
-                background: "black",
-              },
-            })}
-          >
+          <body>
             <Sidebar />
             <main>
-              <RootOutlet activePathData={activePathData} c={c} />
+              <RootOutlet
+                {...routeData}
+                fallbackErrorBoundary={function ErrorBoundary() {
+                  return <div>Error Boundary in Root</div>;
+                }}
+              />
             </main>
           </body>
         </html>
@@ -92,8 +62,8 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 9999;
 
 serve({ fetch: app.fetch, port: PORT }, (info) => {
   console.log(
-    `\nListening on http://${IS_DEV ? "localhost" : info.address}:${
-      info.port
-    }\n`,
+    `\nListening on http://${
+      process.env.NODE_ENV === "development" ? "localhost" : info.address
+    }:${info.port}\n`,
   );
 });

@@ -1,6 +1,6 @@
 import type { PageProps } from "hwy";
 
-export default async function ({ Outlet }: PageProps) {
+export default function ({ Outlet }: PageProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <p>

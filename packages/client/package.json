@@ -1,6 +1,6 @@
 {
   "name": "@hwy-js/client",
-  "version": "0.7.2",
+  "version": "0.0.0-beta.5",
   "author": {
     "name": "Samuel J. Cook"
   },
@@ -13,36 +13,26 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsup-node index.ts --format esm --dts",
-    "lint": "tsc",
-    "dev": "rm -rf dist && tsup-node index.ts --format esm --dts --watch --sourcemap",
+    "dev": "rm -rf dist && tsup-node index.ts --format esm --dts --watch",
     "publish-beta": "npm publish --tag beta",
     "publish-non-beta": "npm publish",
     "update-latest": "pnpm update --latest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "history": "^5.3.0"
   },
   "devDependencies": {
-    "@types/nprogress": "^0.2.3",
-    "htmx.org": "^1.9.8",
-    "idiomorph": "^0.0.9",
-    "nprogress": "^0.2.0",
-    "tsup": "^7.2.0",
-    "typescript": "^5.2.2"
+    "@preact/signals": "^1.2.2",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.17",
+    "preact": "^10.19.3",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
   },
   "peerDependencies": {
-    "htmx.org": ">=1.9.6",
-    "idiomorph": ">=0.0.9",
-    "nprogress": ">=0.2.0"
-  },
-  "peerDependenciesMeta": {
-    "htmx.org": {
-      "optional": true
-    },
-    "idiomorph": {
-      "optional": true
-    },
-    "nprogress": {
-      "optional": true
-    }
+    "@preact/signals": "^1.2.2",
+    "preact": "^10.19.3"
   },
   "repository": {
     "type": "git",

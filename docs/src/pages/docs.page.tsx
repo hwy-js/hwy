@@ -1,29 +1,16 @@
-import { HeadFunction } from "hwy";
-import { CodeBlock } from "../components/code-block.js";
+import { PageProps } from "hwy";
 import { AnchorHeading } from "../components/anchor-heading.js";
-import { Paragraph } from "../components/paragraph.js";
-import { InlineCode } from "../components/inline-code.js";
-import { ListItem, UnorderedList } from "../components/unordered-list.js";
 import { Boldtalic } from "../components/bold-italic.js";
-import { Suspense } from "hono/jsx/streaming";
+import { CodeBlock } from "../components/code-block.js";
+import { InlineCode } from "../components/inline-code.js";
+import { Paragraph } from "../components/paragraph.js";
+import { ListItem, UnorderedList } from "../components/unordered-list.js";
 
-export const head: HeadFunction = () => {
-  return [
-    { title: "Hwy Framework Docs" },
-    {
-      tag: "meta",
-      props: {
-        name: "description",
-        content:
-          "Documentation for the Hwy framework, a simple, lightweight, and flexible web framework, built on Hono and HTMX.",
-      },
-    },
-  ];
-};
-
-export default async function () {
+export default function ({ Outlet }: PageProps) {
   return (
     <div class="flex-col-wrapper-bigger">
+      <Outlet />
+
       <h2 class="h2">Docs</h2>
       <AnchorHeading content="Creating a new project" />
       <Paragraph>
@@ -49,7 +36,7 @@ root
 │   ├── styles/
 │   │   ├── global.bundle.css
 │   │   ├── global.critical.css
-│   ├── client.entry.ts
+│   ├── entry.client.tsx
 │   ├── main.tsx
 │   .gitignore
 │   ...
@@ -353,32 +340,6 @@ export function loader({ c }: DataProps) {
         You can also "throw" a <InlineCode>redirect</InlineCode> if you want,
         which can be helpful in keeping your typescript types clean.
       </Paragraph>
-      <AnchorHeading content="Server components" />
-      <Paragraph>
-        In addition to using loaders to load data in parallel before rendering
-        any components, you can also load data inside your Hwy page components.
-        Be careful with this, as it can introduce waterfalls, but if you are
-        doing low-latency data fetching and prefer that pattern, it's available
-        to you in Hwy.
-      </Paragraph>
-      <CodeBlock
-        language="tsx"
-        code={`
-// src/some-page.page.tsx
-
-export default async function ({ Outlet }: PageProps) {
-  const someData = await getSomeData()
-
-  return (
-    <div>
-      {JSON.stringify(someData)}
-
-      <Outlet />
-    </div>
-  )
-}
-      `}
-      />
       <Paragraph>
         You can also pass data to the child outlet if you want, and it will be
         available in the child page component's props. Here's how that would
@@ -493,28 +454,20 @@ export function loader() {
       <AnchorHeading content="Error boundaries" />
       <Paragraph>
         Any Hwy page can export an <InlineCode>ErrorBoundary</InlineCode>{" "}
-        component, which takes the same parameters as{" "}
-        <InlineCode>loaders</InlineCode> and <InlineCode>actions</InlineCode>,
-        as well as the error itself. The type for the ErrorBoundary component
-        props is exported as <InlineCode>ErrorBoundaryProps</InlineCode>. If an
-        error is thrown in the page or any of its children, the error will be
-        caught and passed to the nearest applicable parent error boundary
-        component. You can also pass a default error boundary component that
-        effectively wraps your outermost <InlineCode>RootOutlet</InlineCode> (in{" "}
+        component. If an error is thrown in the route's loader, the applicable
+        error boundary will be rendered. You can also pass a default error
+        boundary component that effectively wraps your outermost{" "}
+        <InlineCode>RootOutlet</InlineCode> (in{" "}
         <InlineCode>main.tsx</InlineCode>) like so:
       </Paragraph>
       <CodeBlock
         language="tsx"
         code={`
-import type { ErrorBoundaryProps } from 'hwy'
-
-...
-
 <RootOutlet
   c={c}
   activePathData={activePathData}
-  fallbackErrorBoundary={(props: ErrorBoundaryProps) => {
-    return <div>{props.error.message}</div>
+  fallbackErrorBoundary={() => {
+    return <div>Whoops, something went wrong!</div>
   }}
 />
       `}
@@ -563,7 +516,7 @@ export async function loader({ c }: AppDataProps) {
 }
 `}
       />
-      <AnchorHeading content="Main.tsx" />
+      <AnchorHeading content="main.tsx" />
       <Paragraph>
         In your <InlineCode>main.tsx</InlineCode> file, you'll have a handler
         that looks something like this.
@@ -612,7 +565,6 @@ app.all('*', async (c, next) => {
         </html>
       )
     },
-    experimentalStreaming: false, // optional
   })
 })
       `}
@@ -739,11 +691,8 @@ export const head: HeadFunction = (props) => {
         <InlineCode>getDefaultBodyProps</InlineCode>), anchor tags (links) and
         form submissions will be automatically progressively enhanced. For
         forms, include the traditional attributes, like this:
-        <CodeBlock
-          language="tsx"
-          code={`<form action="/login" method="POST">`}
-        />
       </Paragraph>
+      <CodeBlock language="tsx" code={`<form action="/login" method="POST">`} />
       <AnchorHeading content="Random" />
       <Paragraph>
         Here is some random stuff that is worth noting, but doesn't fit well
@@ -766,7 +715,7 @@ export const head: HeadFunction = (props) => {
       <Paragraph>
         If you would like to use Hwy like a traditional MPA framework, and skip
         using HTMX, you can do so simply by excluding HTMX from your{" "}
-        <InlineCode>src/client.entry.ts</InlineCode> file.
+        <InlineCode>src/entry.client.ts</InlineCode> file.
       </Paragraph>
       <AnchorHeading content="Security" />
       <Paragraph>A few points on security:</Paragraph>
@@ -805,20 +754,20 @@ export const head: HeadFunction = (props) => {
       <AnchorHeading content="Self-vendoring" />
       <Paragraph>
         If you would like to self-vendor your dependencies instead of using a{" "}
-        <InlineCode>src/client.entry.ts</InlineCode> file (which is bundled with
+        <InlineCode>src/entry.client.ts</InlineCode> file (which is bundled with
         esbuild), you can do so simply by including your dependencies in the{" "}
         <InlineCode>/public</InlineCode> directory and referencing them in a
         script. For example:
-        <CodeBlock
-          language="tsx"
-          code={`
+      </Paragraph>
+      <CodeBlock
+        language="tsx"
+        code={`
 <script
   src={getPublicUrl('your-script.js')}
   defer
 />
         `}
-        />
-      </Paragraph>
+      />
       <AnchorHeading content="Roadmap" />
       <Paragraph>
         Other than the obvious (stabilize APIs, more tests, better docs, etc.),

@@ -1,44 +1,9 @@
-import { type DataProps, type PageProps } from "hwy";
-import { getFormStrings } from "@hwy-js/utils";
-
-export async function action({ c }: DataProps) {
-  const data = await getFormStrings<"email" | "password">({ c });
-
-  if (!data) {
-    throw new Error("No data was returned from getFormStrings.");
-  }
-
-  if (!data.email || !data.password) {
-    return {
-      error: true,
-      message: "Error: Please enter a valid email and password.",
-    };
-  }
-
-  if (!data.email.includes(".") || !data.email.includes("@")) {
-    return {
-      error: true,
-      message: "Error: Please enter a valid email address.",
-    };
-  }
-
-  if (data.password.length < 4) {
-    return {
-      error: true,
-      message: "Error: Please enter a password that is at least 4 characters.",
-    };
-  }
-
-  return {
-    email: "",
-    success: true,
-    message: `Congrats! You are signed in as ${data.email}.`,
-  };
-}
+import { PageProps } from "hwy";
+import { ActionType } from "./login.server.js";
 
 const thisRoute = "/login";
 
-export default function ({ actionData }: PageProps<never, typeof action>) {
+export default function ({ actionData }: PageProps<never, ActionType>) {
   const colStyles = { display: "flex", flexDirection: "column", gap: "1.5rem" };
   const labelStyles = {
     display: "flex",
@@ -67,18 +32,12 @@ export default function ({ actionData }: PageProps<never, typeof action>) {
       </p>
 
       {!actionData?.success && (
-        <form
-          action={thisRoute}
-          method="POST"
-          style={colStyles}
-          hx-swap="scroll:none"
-        >
+        <form action={thisRoute} method="POST" style={colStyles}>
           <label style={labelStyles}>
             Email
             <input
               name="email"
               type="email"
-              hx-preserve="true"
               id="email"
               placeholder="you@example.com"
             />
@@ -87,7 +46,6 @@ export default function ({ actionData }: PageProps<never, typeof action>) {
           <label style={labelStyles}>
             Password
             <input
-              hx-preserve="true"
               id="password"
               name="password"
               type="password"
@@ -115,12 +73,6 @@ export default function ({ actionData }: PageProps<never, typeof action>) {
         >
           {actionData.message}
         </div>
-      )}
-
-      {actionData?.success && (
-        <a href={thisRoute} class="btn">
-          Reset form
-        </a>
       )}
     </div>
   );

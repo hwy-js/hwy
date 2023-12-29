@@ -16,13 +16,6 @@
     "build:client": "pnpm -r --filter @hwy-js/client run build",
     "build:utils": "pnpm -r --filter @hwy-js/utils run build",
     "build": "pnpm build:build && pnpm build:dev && pnpm build:core && pnpm build:create-hwy && pnpm build:client && pnpm build:utils",
-    "lint:build": "pnpm -r --filter @hwy-js/build run lint",
-    "lint:core": "pnpm -r --filter hwy run lint",
-    "lint:dev": "pnpm -r --filter @hwy-js/dev run lint",
-    "lint:create-hwy": "pnpm -r --filter create-hwy run lint",
-    "lint:client": "pnpm -r --filter @hwy-js/client run lint",
-    "lint:utils": "pnpm -r --filter @hwy-js/utils run lint",
-    "lint": "npm-run-all --parallel lint:*",
     "dev:test": "npx vitest",
     "dev:build": "pnpm -r --filter @hwy-js/build run dev",
     "dev:core": "pnpm -r --filter hwy run dev",
@@ -47,17 +40,23 @@
     "typecheck:client": "pnpm -r --filter @hwy-js/client run typecheck",
     "typecheck:utils": "pnpm -r --filter @hwy-js/utils run typecheck",
     "typecheck": "npm-run-all --parallel typecheck:*",
-    "pre-publish": "pnpm typecheck && pnpm test",
+    "pre-publish": "pnpm -r --filter create-hwy clear-asdf && pnpm typecheck && pnpm test",
     "publish-beta": "pnpm pre-publish && pnpm -r publish-beta",
     "publish-non-beta": "pnpm pre-publish && pnpm -r publish-non-beta",
     "update-latest": "pnpm update --latest && pnpm -r update-latest && pnpm i"
   },
   "devDependencies": {
-    "@types/node": "^20.9.0",
+    "@preact/signals": "^1.2.2",
+    "@types/node": "^20.10.4",
+    "hono": "^3.11.7",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.1.0",
-    "typescript": "^5.2.2",
-    "vitest": "^0.34.6"
+    "picocolors": "^1.0.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
   },
-  "prettier": {}
+  "prettier": {
+    "useTabs": false,
+    "proseWrap": "never"
+  }
 }

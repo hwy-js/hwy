@@ -1,10 +1,19 @@
-import { DEFAULT_PORT, type HwyConfig } from "../../common/index.mjs";
-import type { Options } from "../index.js";
+import { DEFAULT_PORT, HwyConfig } from "../../common/index.mjs";
+import { Options } from "../index.js";
 
 function get_hwy_config(options: Options) {
-  let obj: HwyConfig = {
-    deploymentTarget: options.deployment_target,
-  };
+  let obj: HwyConfig =
+    options.client_lib === "preact"
+      ? {
+          useClientSidePreact: true,
+          deploymentTarget: options.deployment_target,
+          useDotServerFiles: true,
+        }
+      : {
+          useClientSidePreact: false,
+          deploymentTarget: options.deployment_target,
+          useDotServerFiles: false,
+        };
 
   if (options.deployment_target !== "cloudflare-pages") {
     obj.dev = {
@@ -15,20 +24,16 @@ function get_hwy_config(options: Options) {
   if (options.css_preference === "tailwind") {
     obj.dev = {
       ...obj.dev,
-      watchExclusions: ["src/styles/tw-output.bundle.css"],
+      watchExclusions: ["src/styles/tw-input.css"],
     };
   }
 
   let text = `export default ${JSON.stringify(obj, null, 2)}`;
 
-  if (options.lang_preference === "typescript") {
-    text =
-      `import type { HwyConfig } from "@hwy-js/build";\n\n` +
-      text +
-      ` satisfies HwyConfig;`;
-  } else {
-    text = `/** @type {import('@hwy-js/build').HwyConfig} */\n` + text + ";";
-  }
+  text =
+    `import type { HwyConfig } from "@hwy-js/build";\n\n` +
+    text +
+    ` satisfies HwyConfig;`;
 
   return text.trim() + "\n";
 }

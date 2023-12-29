@@ -1,25 +1,16 @@
-import { IS_DEV } from "./utils/constants.js";
-import {
-  hwyInit,
-  CssImports,
-  RootOutlet,
-  DevLiveRefreshScript,
-  ClientScripts,
-  HeadElements,
-  HeadBlock,
-  getDefaultBodyProps,
-  renderRoot,
-  getPublicUrl,
-} from "hwy";
-import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { handle } from "@hono/node-server/vercel";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { Nav } from "./components/nav.js";
+import { handle } from "@hono/node-server/vercel";
+import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
-import { FallbackErrorBoundary } from "./components/fallback-error-boundary.js";
+import { HeadBlock, getRouteData, hwyInit, utils } from "hwy";
+import { BodyInner } from "./components/body-inner.js";
+import { IS_DEV } from "./utils/constants.js";
 import { make_emoji_data_url } from "./utils/utils.js";
+
+import { html } from "hono/html";
+import { renderToString } from "preact-render-to-string";
 
 const app = new Hono();
 app.use("*", logger());
@@ -38,11 +29,11 @@ await hwyInit({
   publicUrlPrefix: process.env.NODE_ENV === "production" ? "docs/" : undefined,
 });
 
-const default_head_blocks: HeadBlock[] = [
+const defaultHeadBlocks: HeadBlock[] = [
   { title: "Hwy Framework" },
   {
     tag: "meta",
-    props: {
+    attributes: {
       name: "description",
       content:
         "Hwy is a simple, lightweight, and flexible web framework, built on Hono and HTMX.",
@@ -50,85 +41,106 @@ const default_head_blocks: HeadBlock[] = [
   },
   {
     tag: "link",
-    props: {
+    attributes: {
       rel: "icon",
       href: make_emoji_data_url("⭐"),
     },
   },
   {
     tag: "meta",
-    props: {
+    attributes: {
       name: "og:image",
       content: "/create-hwy-snippet.webp",
-    },
-  },
-  {
-    tag: "meta",
-    props: {
-      name: "htmx-config",
-      content: JSON.stringify({
-        selfRequestsOnly: true,
-        refreshOnHistoryMiss: true,
-        scrollBehavior: "auto",
-      }),
     },
   },
 ];
 
 app.all("*", async (c, next) => {
-  c.header("Cache-Control", "max-age=0, s-maxage=2678400");
+  if (c.req.method === "GET") {
+    c.header("Cache-Control", "max-age=0, s-maxage=2678400");
+  }
 
-  return await renderRoot({
-    c,
-    next,
-    experimentalStreaming: true,
-    root: ({ activePathData }) => {
-      return (
-        <html lang="en">
-          <head>
-            <meta charset="UTF-8" />
-            <meta
-              name="viewport"
-              content="width=device-width,initial-scale=1"
-            />
+  const routeData = await getRouteData({ c, defaultHeadBlocks });
 
-            <HeadElements
-              c={c}
-              activePathData={activePathData}
-              defaults={default_head_blocks}
-            />
+  if (routeData instanceof Response) {
+    return routeData;
+  }
 
-            <CssImports />
-            <ClientScripts activePathData={activePathData} />
-            <DevLiveRefreshScript />
-            <script defer src={getPublicUrl("prism.js")} />
-          </head>
+  if (!routeData) {
+    return await next();
+  }
 
-          <body {...getDefaultBodyProps({ idiomorph: true, nProgress: true })}>
-            <div class="body-inner">
-              <div style={{ flexGrow: 1 }}>
-                <Nav />
+  const {
+    title,
+    criticalInlinedCssProps,
+    metaElementsProps,
+    serverRenderingProps,
+    injectedScriptsProps,
+    clientEntryModuleProps,
+    restHeadElementsProps,
+    pageSiblingsProps,
+    bundledStylesheetProps,
+    devRefreshScriptProps,
+    activePathData,
+  } = routeData;
 
-                <div class="root-outlet-wrapper">
-                  <RootOutlet
-                    c={c}
-                    activePathData={activePathData}
-                    fallbackErrorBoundary={FallbackErrorBoundary}
-                  />
-                </div>
-              </div>
+  async function hi() {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1000);
+    });
+    return "bob";
+  }
 
-              <footer>
-                <span style={{ opacity: 0.6 }}>
-                  MIT License. Copyright (c) 2023 Samuel J. Cook.
-                </span>
-              </footer>
-            </div>
-          </body>
-        </html>
-      );
-    },
-  });
+  const markup = (
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+        <title>{title}</title>
+
+        <style {...criticalInlinedCssProps} />
+
+        {metaElementsProps.map((props) => (
+          <meta {...props} />
+        ))}
+
+        {/* {await hi()} */}
+
+        <script {...serverRenderingProps} />
+
+        {injectedScriptsProps.map((props) => (
+          <script {...props} />
+        ))}
+
+        <script {...clientEntryModuleProps} />
+
+        {restHeadElementsProps.map((props) => (
+          /* @ts-ignore */
+          <props.tag {...props.attributes} />
+        ))}
+
+        {pageSiblingsProps.map((props) => (
+          <script {...props} />
+        ))}
+
+        <link {...bundledStylesheetProps} />
+        <script {...devRefreshScriptProps} />
+
+        <script defer src={utils.getPublicUrl("prism.js")} />
+      </head>
+
+      <body>
+        <BodyInner activePathData={activePathData} />
+      </body>
+    </html>
+  );
+
+  // Hono
+  // return c.html(html`<!doctype html>${markup}`);
+
+  // Preact
+  return c.html("<!doctype html>" + renderToString(markup));
 });
 
 app.notFound((c) => {
@@ -142,7 +154,6 @@ app.onError((error, c) => {
 
 export default handle(app);
 
-// if (IS_DEV) {
 serve({ fetch: app.fetch, port: Number(process.env.PORT || 3000) }, (info) => {
   console.log(
     `\nListening on http://${IS_DEV ? "localhost" : info.address}:${
@@ -150,4 +161,3 @@ serve({ fetch: app.fetch, port: Number(process.env.PORT || 3000) }, (info) => {
     }\n`,
   );
 });
-// }

@@ -1,0 +1,56 @@
+/* ------------------------------------------------
+You can add other CSS files to the "styles" folder,
+and they'll be bundled along with this one (in
+alphabetical order by filename) as long as they
+include ".bundle.css" as the end of the filename.
+
+If you have critical styles that you want inlined,
+it's the same story -- just use ".critical.css" at
+the end of any filename in the "styles" folder, and
+they'll be inlined in your document head, in 
+alphabetical order by filename.
+
+By the way, Hwy will hot reload any CSS you write in
+the "styles" folder!
+--------------------------------------------------*/
+
+body {
+  background: indigo;
+  font-family: Menlo, monospace;
+  color: whitesmoke;
+  padding: 1.5rem;
+}
+
+#app-root {
+  max-width: 600px;
+}
+
+p {
+  line-height: 1.7;
+}
+
+nav {
+  display: flex;
+  gap: 1rem;
+}
+
+nav a {
+  font-size: 1.5rem;
+  color: lightblue;
+}
+
+nav a.active {
+  color: orange;
+  font-weight: bold;
+}
+
+button {
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  background: yellow;
+  color: black;
+  border: none;
+  padding: 0.5em;
+  border-radius: 0.25em;
+  cursor: pointer;
+}

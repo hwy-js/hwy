@@ -6,6 +6,7 @@ body {
 body {
   display: flex;
   padding: 1rem;
+  padding-top: 6rem;
 }
 
 @media screen and (max-width: 640px) {
@@ -22,10 +23,17 @@ button:active {
 nav {
   display: flex;
   flex-wrap: wrap;
-  margin-top: 1.5rem;
-  margin-bottom: 3rem;
+  padding: 1.6rem 1.75rem 1.4rem 2.25rem;
   align-items: center;
   justify-content: space-between;
+  position: fixed;
+  top: 0;
+  background: var(--bg);
+  left: 0;
+  min-width: 100vw;
+  max-width: 100vw;
+  border-bottom: 1px solid #7773;
+  z-index: 1;
 }
 
 nav a.logo {
@@ -210,4 +218,8 @@ footer {
   margin-left: 1.5rem;
   padding-left: 0.25rem;
   line-height: 1.75;
+}
+
+body {
+  background-color: indianred;
 }

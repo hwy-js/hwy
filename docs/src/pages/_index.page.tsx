@@ -1,3 +1,4 @@
+import { PageProps } from "hwy";
 import { Boldtalic } from "../components/bold-italic.js";
 import { CodeBlock } from "../components/code-block.js";
 import { H3Wrapper } from "../components/h3-wrapper.js";
@@ -5,9 +6,10 @@ import { InlineCode } from "../components/inline-code.js";
 import { Paragraph } from "../components/paragraph.js";
 import { ListItem, UnorderedList } from "../components/unordered-list.js";
 
-export default function () {
+export default function ({ Outlet }: PageProps) {
   return (
     <>
+      <Outlet />
       <BigHeading />
       <BundleBadge />
       <Quickstart />
@@ -87,12 +89,6 @@ function WhatIsHwy() {
         </Paragraph>
 
         <Paragraph>
-          Page components are async, so you can even{" "}
-          <Boldtalic>fetch data in JSX</Boldtalic> if you want to (just be
-          careful with waterfalls).
-        </Paragraph>
-
-        <Paragraph>
           The backend server is built on <Boldtalic>Hono</Boldtalic>, so you
           have access to a rich, growing ecosystem with lots of middleware and
           wonderful docs.
@@ -137,7 +133,6 @@ function Features() {
         <ListItem>Server-rendered JSX / TSX</ListItem>
         <ListItem>Nested, file-based routing</ListItem>
         <ListItem>Remix-style actions and parallel loaders</ListItem>
-        <ListItem>Async page components</ListItem>
         <ListItem>Rich Hono middleware ecosystem</ListItem>
         <ListItem>100% type-safe</ListItem>
         <ListItem>Server built on Hono</ListItem>
@@ -187,21 +182,6 @@ export async function loader({ params }: DataProps) {
 
 export default function ({ loaderData }: PageProps<typeof loader>) {
   return <UserProfile user={loaderData} />
-}
-`}
-        />
-
-        <Paragraph>
-          Or, if you prefer to fetch inside your components:
-        </Paragraph>
-
-        <CodeBlock
-          language="tsx"
-          code={`
-export default async function ({ params }: PageProps) {
-const user = await getUser(params.user_id)
-
-return <UserProfile user={user} />
 }
 `}
         />

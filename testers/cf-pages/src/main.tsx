@@ -1,17 +1,8 @@
-import {
-  hwyInit,
-  CssImports,
-  RootOutlet,
-  DevLiveRefreshScript,
-  ClientScripts,
-  HeadElements,
-  getDefaultBodyProps,
-  renderRoot,
-} from "hwy";
+import { RootOutlet } from "@hwy-js/client";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
-import type { HtmxConfig } from "htmx.org";
+import { HeadElements, hwyInit, renderRoot } from "hwy";
 
 const app = new Hono();
 
@@ -20,54 +11,43 @@ await hwyInit({ app });
 app.use("*", logger());
 app.get("*", secureHeaders());
 
+const defaultHeadBlocks = [
+  { title: "cf-pages-tester" },
+  {
+    tag: "meta",
+    attributes: {
+      charset: "UTF-8",
+    },
+  },
+  {
+    tag: "meta",
+    attributes: {
+      name: "viewport",
+      content: "width=device-width,initial-scale=1",
+    },
+  },
+  {
+    tag: "meta",
+    attributes: {
+      name: "description",
+      content: "Take the Hwy!",
+    },
+  },
+];
+
 app.all("*", async (c, next) => {
   return await renderRoot({
     c,
     next,
-    root: ({ activePathData }) => {
+    defaultHeadBlocks,
+    root: (baseProps) => {
       return (
         <html lang="en">
           <head>
-            <meta charset="UTF-8" />
-            <meta
-              name="viewport"
-              content="width=device-width,initial-scale=1"
-            />
-
-            <HeadElements
-              c={c}
-              activePathData={activePathData}
-              defaults={[
-                { title: "cf-pages-tester" },
-                {
-                  tag: "meta",
-                  props: {
-                    name: "description",
-                    content: "Take the Hwy!",
-                  },
-                },
-                {
-                  tag: "meta",
-                  props: {
-                    name: "htmx-config",
-                    content: JSON.stringify({
-                      selfRequestsOnly: true,
-                      refreshOnHistoryMiss: true,
-                      scrollBehavior: "auto",
-                    } satisfies HtmxConfig & {
-                      selfRequestsOnly: boolean;
-                    }),
-                  },
-                },
-              ]}
-            />
-
-            <CssImports />
-            <ClientScripts activePathData={activePathData} />
-            <DevLiveRefreshScript />
+            <HeadElements {...baseProps} />
           </head>
 
-          <body {...getDefaultBodyProps()}>
+          <body>
             <nav>
               <a href="/">
                 <h1>Hwy</h1>
@@ -85,8 +65,7 @@ app.all("*", async (c, next) => {
 
             <main>
               <RootOutlet
-                activePathData={activePathData}
-                c={c}
+                {...baseProps}
                 fallbackErrorBoundary={() => {
                   return <div>Something went wrong.</div>;
                 }}

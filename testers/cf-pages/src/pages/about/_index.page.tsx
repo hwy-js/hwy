@@ -7,9 +7,7 @@ export default function () {
         coming from <code>src/pages/about/_index.page.tsx</code>.
       </p>
 
-      <a href="/about/learn-more" hx-boost="false">
-        Go to explicit child route
-      </a>
+      <a href="/about/learn-more">Go to explicit child route</a>
     </>
   );
 }

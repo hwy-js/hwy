@@ -109,9 +109,7 @@ function get_readme(options: Options) {
 
 Because Wrangler is in charge of your dev server, you should set your dev server port
 via the \`--port\` flag in the \`dev:wrangler\` script in your \`package.json\` file
-instead of in the \`dev.port\` field in your \`hwy.config${
-      options.lang_preference === "typescript" ? ".ts" : ".js"
-    }\` file.
+instead of in the \`dev.port\` field in your \`hwy.config.ts\` file.
 
 When you deploy, you'll want to set your build configuration as follows:
 

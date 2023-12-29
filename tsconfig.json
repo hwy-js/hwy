@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "noImplicitAny": true,
     "skipLibCheck": true,
+    "noEmit": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx"
+    "jsxImportSource": "preact"
   },
   "exclude": ["node_modules", "dist"]
 }

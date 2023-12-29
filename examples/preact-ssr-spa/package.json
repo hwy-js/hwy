@@ -1,0 +1,24 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc && hwy-build",
+    "start": "bun dist/main.js",
+    "dev": "bun run --bun hwy-dev-serve",
+    "update-latest": "pnpm update --latest",
+    "nuke": "rm -rf dist && rm -rf public/dist"
+  },
+  "dependencies": {
+    "hono": "^3.11.7",
+    "hwy": "workspace:*",
+    "preact-render-to-string": "^6.3.1"
+  },
+  "devDependencies": {
+    "@hwy-js/build": "workspace:*",
+    "@hwy-js/dev": "workspace:*",
+    "bun-types": "^1.0.17",
+    "preact": "^10.19.3",
+    "typescript": "^5.3.3",
+    "wouter-preact": "^2.12.2"
+  }
+}

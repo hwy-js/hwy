@@ -1,5 +1,5 @@
-import path from "node:path";
 import fs from "node:fs";
+import path from "node:path";
 import readline from "node:readline";
 
 const dirs_in_slash_packages = [
@@ -171,12 +171,12 @@ function set_version() {
 }
 
 export {
-  bump_to_new_patch,
-  bump_to_new_minor,
-  bump_to_new_major,
   add_beta,
   bump_beta,
-  remove_beta,
+  bump_to_new_major,
+  bump_to_new_minor,
+  bump_to_new_patch,
   confirm_and_get_current_version,
+  remove_beta,
   set_version,
 };

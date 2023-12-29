@@ -1,10 +1,16 @@
-import path from "node:path";
-import fs from "node:fs";
 import esbuild from "esbuild";
-import { hwyLog } from "./hwy-log.js";
-import { get_hashed_public_url_low_level } from "./hashed-public-url.js";
+import fs from "node:fs";
+import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { HWY_GLOBAL_KEYS } from "../../common/index.mjs";
+import { HWY_GLOBAL_KEYS, hwyLog } from "../../common/index.mjs";
+import { get_hashed_public_url_low_level } from "./hashed-public-url.js";
+
+/*
+NOTE: This file assumes it's run (and therefore imported / initiated)
+only after the public-map.js file has been generated. That means you
+should import it lazily and only after the public-map.js file has been
+generated.
+*/
 
 const public_map_path = path.resolve("dist", "public-map.js");
 
@@ -12,16 +18,16 @@ const public_map: Record<string, string> | undefined = (
   await import(pathToFileURL(public_map_path).href)
 )[HWY_GLOBAL_KEYS.public_map];
 
-const URL_REGEX = /url\(\s*['"]([^'"]*)['"]\s*\)/g;
+const URL_REGEX = /url\(\s*(?:(['"]?)(.*?)\1)\s*\)/gi;
 
-function replacer(_: string, p1: string) {
+function replacer(_: string, __: string, p2: string) {
   if (!public_map) {
     throw new Error("No public map found");
   }
 
   const hashed = get_hashed_public_url_low_level({
     public_map,
-    url: p1,
+    url: p2,
   });
 
   return `url("${hashed}")`;
@@ -31,8 +37,12 @@ async function bundle_css_files() {
   const using_styles_dir = fs.existsSync(path.resolve("./src/styles"));
   if (!using_styles_dir) {
     hwyLog("Not using styles directory, skipping css bundling...");
+
+    await Promise.all([write_critical_bundled_css_is_undefined()]);
+
     return;
   }
+
   const directory_path = path.resolve("src/styles");
   const files = await fs.promises.readdir(directory_path);
 
@@ -53,27 +63,18 @@ async function bundle_css_files() {
 
     const standard_css_text = promises.join("\n").replace(URL_REGEX, replacer);
 
-    function write_standard_bundled_css_exists(does_exist: boolean) {
-      fs.writeFileSync(
-        path.join(process.cwd(), "dist/standard-bundled-css-exists.js"),
-        `export const ${HWY_GLOBAL_KEYS.standard_bundled_css_exists} = ${does_exist};`,
-      );
-    }
-
     if (standard_css_paths.length) {
-      await esbuild.build({
-        stdin: {
-          contents: standard_css_text,
-          resolveDir: path.resolve("src/styles"),
-          loader: "css",
-        },
-        outfile: path.resolve("public/dist/standard-bundled.css"),
-        minify: true,
-      });
-
-      write_standard_bundled_css_exists(true);
-    } else {
-      write_standard_bundled_css_exists(false);
+      await Promise.all([
+        esbuild.build({
+          stdin: {
+            contents: standard_css_text,
+            resolveDir: path.resolve("src/styles"),
+            loader: "css",
+          },
+          outfile: path.resolve("public/dist/standard-bundled.css"),
+          minify: true,
+        }),
+      ]);
     }
   }
 
@@ -101,19 +102,30 @@ async function bundle_css_files() {
 
       const css = result.outputFiles[0].text.trim();
 
-      fs.writeFileSync(
+      await fs.promises.writeFile(
         path.join(process.cwd(), "dist/critical-bundled-css.js"),
         `export const ${HWY_GLOBAL_KEYS.critical_bundled_css} = \`${css}\`;`,
       );
+
+      return css;
     } else {
-      fs.writeFileSync(
-        path.join(process.cwd(), "dist/critical-bundled-css.js"),
-        `export const ${HWY_GLOBAL_KEYS.critical_bundled_css} = undefined;`,
-      );
+      await write_critical_bundled_css_is_undefined();
     }
   }
 
-  await Promise.all([build_standard_css(), build_critical_css()]);
+  const [_, critical_css] = await Promise.all([
+    build_standard_css(),
+    build_critical_css(),
+  ]);
+
+  return { critical_css };
 }
 
 export { bundle_css_files };
+
+async function write_critical_bundled_css_is_undefined() {
+  return fs.promises.writeFile(
+    path.join(process.cwd(), "dist/critical-bundled-css.js"),
+    `export const ${HWY_GLOBAL_KEYS.critical_bundled_css} = undefined;`,
+  );
+}

@@ -1,12 +1,4 @@
-import type { ChildrenPermissive } from "../types.js";
-
-function H3Wrapper({
-  heading,
-  children,
-}: {
-  heading: string;
-  children: ChildrenPermissive;
-}) {
+function H3Wrapper({ heading, children }: { heading: string; children: any }) {
   return (
     <div>
       <h3 class="h3">{heading}</h3>

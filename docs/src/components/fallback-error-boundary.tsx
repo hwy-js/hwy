@@ -1,7 +1,6 @@
-import type { ErrorBoundaryProps } from "hwy";
 import { Paragraph } from "./paragraph.js";
 
-function FallbackErrorBoundary(props: ErrorBoundaryProps) {
+function FallbackErrorBoundary() {
   return (
     <div class="flex-col-wrapper">
       <Paragraph>Whoops, something went wrong. Sorry about that.</Paragraph>
