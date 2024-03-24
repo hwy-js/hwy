@@ -12,17 +12,9 @@
     "build:build": "pnpm -r --filter @hwy-js/build run build",
     "build:core": "pnpm -r --filter hwy run build",
     "build:dev": "pnpm -r --filter @hwy-js/dev run build",
-    "build:create-hwy": "pnpm -r --filter create-hwy run build",
     "build:client": "pnpm -r --filter @hwy-js/client run build",
     "build:utils": "pnpm -r --filter @hwy-js/utils run build",
-    "build": "pnpm build:build && pnpm build:dev && pnpm build:core && pnpm build:create-hwy && pnpm build:client && pnpm build:utils",
-    "lint:build": "pnpm -r --filter @hwy-js/build run lint",
-    "lint:core": "pnpm -r --filter hwy run lint",
-    "lint:dev": "pnpm -r --filter @hwy-js/dev run lint",
-    "lint:create-hwy": "pnpm -r --filter create-hwy run lint",
-    "lint:client": "pnpm -r --filter @hwy-js/client run lint",
-    "lint:utils": "pnpm -r --filter @hwy-js/utils run lint",
-    "lint": "npm-run-all --parallel lint:*",
+    "build": "pnpm build:build && pnpm build:dev && pnpm build:core && pnpm build:client && pnpm build:utils",
     "dev:test": "npx vitest",
     "dev:build": "pnpm -r --filter @hwy-js/build run dev",
     "dev:core": "pnpm -r --filter hwy run dev",
@@ -43,7 +35,6 @@
     "typecheck:build": "pnpm -r --filter @hwy-js/build run typecheck",
     "typecheck:core": "pnpm -r --filter hwy run typecheck",
     "typecheck:dev": "pnpm -r --filter @hwy-js/dev run typecheck",
-    "typecheck:create-hwy": "pnpm -r --filter create-hwy run typecheck",
     "typecheck:client": "pnpm -r --filter @hwy-js/client run typecheck",
     "typecheck:utils": "pnpm -r --filter @hwy-js/utils run typecheck",
     "typecheck": "npm-run-all --parallel typecheck:*",
@@ -53,11 +44,19 @@
     "update-latest": "pnpm update --latest && pnpm -r update-latest && pnpm i"
   },
   "devDependencies": {
-    "@types/node": "^20.9.0",
+    "@types/node": "^20.11.28",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "h3": "^1.11.1",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.1.0",
-    "typescript": "^5.2.2",
-    "vitest": "^0.34.6"
+    "prettier": "^3.2.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.4.2",
+    "vitest": "^1.4.0"
   },
-  "prettier": {}
+  "prettier": {
+    "useTabs": false,
+    "proseWrap": "never"
+  }
 }

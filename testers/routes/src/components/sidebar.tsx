@@ -1,6 +1,6 @@
 function Sidebar() {
   return (
-    <ul class="sidebar">
+    <ul className="sidebar">
       <LinkListItem href="/does-not-exist" />
       <LinkListItem href="/this-should-be-ignored" />
       <LinkListItem href="/" />
@@ -40,7 +40,9 @@ export { Sidebar };
 function LinkListItem({ href }: { href: string }) {
   return (
     <li>
-      <a href={href}>{href}</a>
+      <a href={href} data-boost="true">
+        {href}
+      </a>
     </li>
   );
 }

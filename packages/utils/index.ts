@@ -1,3 +1,3 @@
-export { makeCookieEventHelpers } from "./src/client-cookie-events.js";
-export type { CookieEventDetails } from "./src/client-cookie-events.js";
-export { getFormStrings } from "./src/get-form-strings.js";
+// export { makeCookieEventHelpers } from "./src/base/client-cookie-events.js";
+// export type { CookieEventDetails } from "./src/base/client-cookie-events.js";
+export { getFormStrings } from "./src/base/get-form-strings.js";

@@ -1,6 +1,6 @@
 {
   "name": "@hwy-js/build",
-  "version": "0.7.2",
+  "version": "0.0.0-beta.69",
   "author": {
     "name": "Samuel J. Cook"
   },
@@ -13,29 +13,28 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsup-node index.ts --format esm --dts",
-    "lint": "tsc",
-    "dev": "rm -rf dist && tsup-node index.ts --format esm --dts --watch --sourcemap",
+    "dev": "rm -rf dist && tsup-node index.ts --format esm --dts --watch",
     "publish-beta": "npm publish --tag beta",
     "publish-non-beta": "npm publish",
     "update-latest": "pnpm update --latest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc"
   },
   "bin": {
     "hwy-dev-serve": "./scripts/dev-serve.js",
     "hwy-build": "./scripts/run-build-tasks.js"
   },
   "dependencies": {
-    "chokidar": "^3.5.3",
-    "dotenv": "^16.3.1",
-    "esbuild": "^0.19.5",
-    "picocolors": "^1.0.0",
+    "chokidar": "^3.6.0",
+    "dotenv": "^16.4.5",
+    "esbuild": "^0.20.2",
+    "get-port-please": "^3.1.2",
+    "jsonc-parser": "^3.2.1",
     "readdirp": "^3.6.0"
   },
   "devDependencies": {
-    "@types/node": "^20.9.0",
-    "hono": "^3.10.1",
-    "tsup": "^7.2.0",
-    "typescript": "^5.2.2"
+    "@types/node": "^20.11.28",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.2"
   },
   "repository": {
     "type": "git",

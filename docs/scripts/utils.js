@@ -1,53 +1,45 @@
 import fs from "node:fs";
 
-const current_latest_hwy_core_version = JSON.parse(
+const currentLatestHwyCoreVersion = JSON.parse(
   fs.readFileSync("../packages/core/package.json"),
 ).version;
 
 console.log(
   "Current latest hwy core version:",
-  current_latest_hwy_core_version + "\n",
+  currentLatestHwyCoreVersion + "\n",
 );
 
-const override_hwy_version = undefined;
+const overrideHwyVersion = undefined;
+console.log("Override hwy version:", overrideHwyVersion + "\n");
 
-console.log("Override hwy version:", override_hwy_version + "\n");
+const hwyVersion = overrideHwyVersion || currentLatestHwyCoreVersion;
+console.log("Using hwy version:", hwyVersion + "\n");
 
-const hwy_version = override_hwy_version || current_latest_hwy_core_version;
+const hwyPkgRegex = /"hwy": "([^"]+)"/;
+const buildPkgRegex = /"@hwy-js\/build": "([^"]+)"/;
+const clientPkgRegex = /"@hwy-js\/client": "([^"]+)"/;
+const devPkgRegex = /"@hwy-js\/dev": "([^"]+)"/;
 
-console.log("Using hwy version:", hwy_version + "\n");
-
-const hwy_pkg_regex = /"hwy": "([^"]+)"/;
-const build_pkg_regex = /"@hwy-js\/build": "([^"]+)"/;
-const client_pkg_regex = /"@hwy-js\/client": "([^"]+)"/;
-const dev_pkg_regex = /"@hwy-js\/dev": "([^"]+)"/;
-
-function replace_versions(pkg_json_string, version) {
-  return pkg_json_string
-    .replace(hwy_pkg_regex, `"hwy": "${version}"`)
-    .replace(build_pkg_regex, `"@hwy-js/build": "${version}"`)
-    .replace(client_pkg_regex, `"@hwy-js/client": "${version}"`)
-    .replace(dev_pkg_regex, `"@hwy-js/dev": "${version}"`);
+function replaceVersions(pkgJSONStr, version) {
+  return pkgJSONStr
+    .replace(hwyPkgRegex, `"hwy": "${version}"`)
+    .replace(buildPkgRegex, `"@hwy-js/build": "${version}"`)
+    .replace(clientPkgRegex, `"@hwy-js/client": "${version}"`)
+    .replace(devPkgRegex, `"@hwy-js/dev": "${version}"`);
 }
 
-function to_workspace() {
-  let pkg_json_string = fs.readFileSync("package.json", "utf-8");
-
-  pkg_json_string = replace_versions(pkg_json_string, "workspace:*");
-
-  fs.writeFileSync("package.json", pkg_json_string);
-
+function toWorkspace() {
+  let pkgJSONStr = fs.readFileSync("package.json", "utf-8");
+  pkgJSONStr = replaceVersions(pkgJSONStr, "workspace:*");
+  fs.writeFileSync("package.json", pkgJSONStr);
   console.log("Updated package.json to use workspace\n");
 }
 
-function to_latest() {
-  let pkg_json_string = fs.readFileSync("package.json", "utf-8");
-
-  pkg_json_string = replace_versions(pkg_json_string, hwy_version);
-
-  fs.writeFileSync("package.json", pkg_json_string);
-
-  console.log(`Updated package.json to use ${hwy_version}\n`);
+function toLatest() {
+  let pkgJSONStr = fs.readFileSync("package.json", "utf-8");
+  pkgJSONStr = replaceVersions(pkgJSONStr, hwyVersion);
+  fs.writeFileSync("package.json", pkgJSONStr);
+  console.log(`Updated package.json to use ${hwyVersion}\n`);
 }
 
-export { to_workspace, to_latest };
+export { toLatest, toWorkspace };

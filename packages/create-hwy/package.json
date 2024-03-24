@@ -1,17 +1,17 @@
 {
   "name": "create-hwy",
-  "version": "0.7.2",
+  "version": "0.0.0-beta.69",
   "author": {
     "name": "Samuel J. Cook"
   },
   "license": "MIT",
   "description": "New project generator for Hwy framework",
   "type": "module",
-  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "files": [
-    "dist",
-    "__common",
-    "__public"
+    "dist"
   ],
   "scripts": {
     "build": "rm -rf dist && tsup-node index.ts --format esm",
@@ -25,37 +25,15 @@
   "bin": {
     "create-hwy": "./scripts/create-hwy.js"
   },
-  "dependencies": {
-    "detype": "^0.6.3",
-    "inquirer": "^9.2.12",
-    "picocolors": "^1.0.0"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20231025.0",
-    "@css-hooks/core": "^1.2.1",
-    "@hono/node-server": "^1.2.3",
-    "@hwy-js/utils": "workspace:*",
-    "@types/inquirer": "^9.0.7",
-    "@types/node": "^20.9.0",
-    "@types/nprogress": "^0.2.3",
-    "bun-types": "^1.0.11",
-    "hono": "^3.10.1",
-    "htmx.org": "^1.9.8",
-    "hwy": "workspace:*",
-    "idiomorph": "^0.0.9",
-    "npm-run-all": "^4.1.5",
-    "nprogress": "^0.2.0",
-    "prettier": "^3.1.0",
-    "tailwindcss": "^3.3.5",
-    "tsup": "^7.2.0",
-    "typescript": "^5.2.2",
-    "wrangler": "^3.15.0"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/hwy-js/hwy",
     "directory": "packages/create-hwy"
   },
   "homepage": "https://hwy.dev",
-  "bugs": "https://github.com/hwy-js/hwy/issues"
+  "bugs": "https://github.com/hwy-js/hwy/issues",
+  "dependencies": {
+    "@clack/prompts": "^0.7.0",
+    "giget": "^1.2.1"
+  }
 }

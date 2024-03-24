@@ -5,8 +5,8 @@ Copied from source on: August 3, 2023
 */
 
 // creates a matcher function
-function make_wouter_matcher(
-  make_regexp_fn = path_to_regexp,
+export function makeWouterMatcher(
+  makeRegexpFn = pathToRegexp,
 ): (pattern: string, path: string) => [boolean, Record<string, string>] {
   const cache: Record<
     string,
@@ -14,12 +14,12 @@ function make_wouter_matcher(
   > = {};
 
   // obtains a cached regexp version of the pattern
-  const get_regexp = (pattern: string) => {
-    return cache[pattern] || (cache[pattern] = make_regexp_fn(pattern));
+  const getRegexp = (pattern: string) => {
+    return cache[pattern] || (cache[pattern] = makeRegexpFn(pattern));
   };
 
   return (pattern: string, path: string) => {
-    const { regexp, keys } = get_regexp(pattern || "");
+    const { regexp, keys } = getRegexp(pattern || "");
     const out = regexp.exec(path);
 
     if (!out) {
@@ -41,13 +41,13 @@ function make_wouter_matcher(
 
 // escapes a regexp string (borrowed from path-to-regexp sources)
 // https://github.com/pillarjs/path-to-regexp/blob/v3.0.0/index.js#L202
-function escape_rx(str: string) {
+function escapeRx(str: string) {
   return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
 }
 
 // returns a segment representation in RegExp based on flags
 // adapted and simplified version from path-to-regexp sources
-function rx_for_segment({
+function rxForSegment({
   repeat,
   optional,
   prefix,
@@ -61,15 +61,15 @@ function rx_for_segment({
   return capture + (optional ? "?" : "");
 }
 
-function path_to_regexp(pattern: string) {
-  const group_rx = /:([A-Za-z0-9_]+)([?+*]?)/g;
+function pathToRegexp(pattern: string) {
+  const groupRx = /:([A-Za-z0-9_]+)([?+*]?)/g;
 
   let match = null,
-    last_index = 0,
+    lastIndex = 0,
     result = "";
   const keys = [];
 
-  while ((match = group_rx.exec(pattern)) !== null) {
+  while ((match = groupRx.exec(pattern)) !== null) {
     const [_, segment, mod] = match;
 
     // :foo  [1]      (  )
@@ -80,16 +80,14 @@ function path_to_regexp(pattern: string) {
     const optional = mod === "?" || mod === "*";
     const prefix = optional && pattern[match.index - 1] === "/" ? 1 : 0;
 
-    const prev = pattern.substring(last_index, match.index - prefix);
+    const prev = pattern.substring(lastIndex, match.index - prefix);
 
     keys.push({ name: segment });
-    last_index = group_rx.lastIndex;
+    lastIndex = groupRx.lastIndex;
 
-    result += escape_rx(prev) + rx_for_segment({ repeat, optional, prefix });
+    result += escapeRx(prev) + rxForSegment({ repeat, optional, prefix });
   }
 
-  result += escape_rx(pattern.substring(last_index));
+  result += escapeRx(pattern.substring(lastIndex));
   return { keys, regexp: new RegExp("^" + result + "(?:\\/)?$", "i") };
 }
-
-export { make_wouter_matcher };

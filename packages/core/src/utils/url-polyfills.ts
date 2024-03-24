@@ -1,13 +1,17 @@
 let fileURLToPath: (url: string | URL) => string;
 let pathToFileURL: (path: string) => URL;
 
+const isServer = typeof document === "undefined";
+
 try {
-  const node_url = await import("node:url");
-  fileURLToPath = node_url.fileURLToPath;
-  pathToFileURL = node_url.pathToFileURL;
+  if (isServer) {
+    const nodeURL = await import("node:url");
+    fileURLToPath = nodeURL.fileURLToPath;
+    pathToFileURL = nodeURL.pathToFileURL;
+  }
 } catch {}
 
-function file_url_to_path(url: string | URL | undefined): string {
+function dynamicFileURLToPath(url: string | URL | undefined): string {
   if (!url) {
     return "";
   }
@@ -19,7 +23,7 @@ function file_url_to_path(url: string | URL | undefined): string {
   return fileURLToPath(url);
 }
 
-function path_to_file_url_string(path: string | undefined): string {
+function pathToFileURLStr(path: string | undefined): string {
   if (!path) {
     return "";
   }
@@ -31,4 +35,12 @@ function path_to_file_url_string(path: string | undefined): string {
   return pathToFileURL(path).href;
 }
 
-export { file_url_to_path, path_to_file_url_string };
+let dynamicNodePath: typeof import("node:path") | undefined;
+
+try {
+  if (isServer) {
+    dynamicNodePath = await import("node:path");
+  }
+} catch {}
+
+export { dynamicFileURLToPath, dynamicNodePath, pathToFileURLStr };

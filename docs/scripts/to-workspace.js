@@ -1,3 +1,3 @@
-import { to_workspace } from "./utils.js";
+import { toWorkspace } from "./utils.js";
 
-to_workspace();
+toWorkspace();

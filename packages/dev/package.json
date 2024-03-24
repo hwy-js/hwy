@@ -1,6 +1,6 @@
 {
   "name": "@hwy-js/dev",
-  "version": "0.7.2",
+  "version": "0.0.0-beta.69",
   "author": {
     "name": "Samuel J. Cook"
   },
@@ -13,21 +13,16 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsup-node index.ts --format esm --dts",
-    "lint": "tsc",
-    "dev": "rm -rf dist && tsup-node index.ts --format esm --dts --watch --sourcemap",
+    "dev": "rm -rf dist && tsup-node index.ts --format esm --dts --watch",
     "publish-beta": "npm publish --tag beta",
     "publish-non-beta": "npm publish",
     "update-latest": "pnpm update --latest",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "picocolors": "^1.0.0"
+    "typecheck": "tsc"
   },
   "devDependencies": {
-    "@types/node": "^20.9.0",
-    "hono": "^3.10.1",
-    "tsup": "^7.2.0",
-    "typescript": "^5.2.2"
+    "@types/node": "^20.11.28",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.2"
   },
   "repository": {
     "type": "git",
@@ -35,5 +30,6 @@
     "directory": "packages/dev"
   },
   "homepage": "https://hwy.dev",
-  "bugs": "https://github.com/hwy-js/hwy/issues"
+  "bugs": "https://github.com/hwy-js/hwy/issues",
+  "sideEffects": false
 }

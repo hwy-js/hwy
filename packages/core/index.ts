@@ -1,33 +1,30 @@
-// init stuff
-export { hwyInit } from "./src/setup.jsx";
+export { getMatchingPathData } from "./src/router/get-matching-path-data.js";
+export { hwyInit } from "./src/setup.js";
+export { utils } from "./src/utils/hwy-utils.js";
 
-// types
 export type {
-  Loader,
-  DataProps,
   Action,
-  PageComponent,
-  PageProps,
+  ActivePathData,
+  AdHocData,
+  DataProps,
   HeadBlock,
   HeadFunction,
   HeadProps,
-  ErrorBoundaryProps,
-  ActivePathData,
+  Loader,
+  PageComponent,
+  PageProps,
 } from "./src/types.js";
 
-// components
-export { CssImports } from "./src/components/css-imports.jsx";
-export { RootOutlet } from "./src/components/recursive.jsx";
-export { ClientScripts } from "./src/components/client-entry-script.jsx";
-export { HeadElements } from "./src/components/head-elements.js";
-export { DevLiveRefreshScript } from "./src/components/dev-live-refresh-script.jsx";
-export { Suspense } from "./src/components/suspense.jsx";
+export { renderRoot } from "./src/components/render-root.js";
 
-// router
-export { getMatchingPathData } from "./src/router/get-matching-path-data.js";
+export { getRouteData } from "./src/utils/get-route-data.js";
 
-// utils
-export { getPublicUrl } from "./src/utils/hashed-public-url.js";
-export { redirect } from "./src/utils/redirect.js";
-export { getDefaultBodyProps } from "./src/utils/default-body-props.js";
-export { renderRoot } from "./src/utils/render-root.js";
+export {
+  ClientScripts,
+  CssImports,
+  DevLiveRefreshScript,
+  HeadElements,
+  getHeadElementProps,
+} from "./src/components/head-elements-comp.js";
+
+export { RootOutlet } from "./src/components/recursive.js";

@@ -1,182 +1,182 @@
-import path from "node:path";
 import fs from "node:fs";
+import path from "node:path";
 import readline from "node:readline";
 
-const dirs_in_slash_packages = [
+const dirsInSlashPackages = [
   "core",
   "build",
   "dev",
-  "create-hwy",
   "client",
   "utils",
+  "create-hwy",
 ];
 
-function get_current_pkg_jsons() {
-  return dirs_in_slash_packages.map((pkg_dirname) => {
+function getCurrentPkgJSONs() {
+  return dirsInSlashPackages.map((pkgDirname) => {
     return JSON.parse(
       fs.readFileSync(
-        path.join(process.cwd(), "packages", pkg_dirname, "package.json"),
+        path.join(process.cwd(), "packages", pkgDirname, "package.json"),
         "utf-8",
       ),
     );
   });
 }
 
-function save_new_pkg_jsons(new_version) {
-  const pkg_jsons = get_current_pkg_jsons();
+function saveNewPkgJSONs(newVersion) {
+  const pkgJSONs = getCurrentPkgJSONs();
 
-  const current_version = confirm_and_get_current_version();
+  const currentVersion = confirmAndGetCurrentVersion();
 
-  const new_pkg_jsons_stringified = pkg_jsons.map((pkg_json) => {
+  const newPkgJSONsStringified = pkgJSONs.map((pkgJSON) => {
     return (
-      JSON.stringify(pkg_json, null, 2).replace(
-        `"version": "${current_version}"`,
-        `"version": "${new_version}"`,
+      JSON.stringify(pkgJSON, null, 2).replace(
+        `"version": "${currentVersion}"`,
+        `"version": "${newVersion}"`,
       ) + "\n"
     );
   });
 
-  dirs_in_slash_packages.forEach((pkg_dirname, i) => {
+  dirsInSlashPackages.forEach((pkgDirname, i) => {
     fs.writeFileSync(
-      path.join(process.cwd(), "packages", pkg_dirname, "package.json"),
-      new_pkg_jsons_stringified[i],
+      path.join(process.cwd(), "packages", pkgDirname, "package.json"),
+      newPkgJSONsStringified[i],
       "utf-8",
     );
   });
 
   console.log(
-    `\nSaved new package versions.\n\n❌ Old versions: ${current_version}.\n\n✅ New versions: ${new_version}.\n`,
+    `\nSaved new package versions.\n\n❌ Old versions: ${currentVersion}.\n\n✅ New versions: ${newVersion}.\n`,
   );
 }
 
-function confirm_and_get_current_version(should_log = false) {
-  const pkg_jsons = get_current_pkg_jsons();
+function confirmAndGetCurrentVersion(shouldLog = false) {
+  const pkgJSONs = getCurrentPkgJSONs();
 
-  const versions = pkg_jsons.map((pkg_json) => pkg_json.version);
+  const versions = pkgJSONs.map((pkgJSON) => pkgJSON.version);
 
   if (versions.some((v) => v !== versions[0])) {
     throw new Error("Package versions are not all the same.");
   }
 
-  if (should_log) {
+  if (shouldLog) {
     console.log(`Current version is ${versions[0]}.\n`);
   }
 
   return versions[0];
 }
 
-function bump_to_new_patch() {
-  const current_version = confirm_and_get_current_version();
+function bumpToNewPatch() {
+  const currentVersion = confirmAndGetCurrentVersion();
 
-  const [major, minor, patch] = current_version.split(".").map(Number);
+  const [major, minor, patch] = currentVersion.split(".").map(Number);
 
-  const new_version = `${major}.${minor}.${patch + 1}`;
+  const newVersion = `${major}.${minor}.${patch + 1}`;
 
-  save_new_pkg_jsons(new_version);
+  saveNewPkgJSONs(newVersion);
 }
 
-function bump_to_new_minor() {
-  const current_version = confirm_and_get_current_version();
+function bumpToNewMinor() {
+  const currentVersion = confirmAndGetCurrentVersion();
 
-  const [major, minor] = current_version.split(".").map(Number);
+  const [major, minor] = currentVersion.split(".").map(Number);
 
-  const new_version = `${major}.${minor + 1}.0`;
+  const newVersion = `${major}.${minor + 1}.0`;
 
-  save_new_pkg_jsons(new_version);
+  saveNewPkgJSONs(newVersion);
 }
 
-function bump_to_new_major() {
-  const current_version = confirm_and_get_current_version();
+function bumpToNewMajor() {
+  const currentVersion = confirmAndGetCurrentVersion();
 
-  const [major] = current_version.split(".").map(Number);
+  const [major] = currentVersion.split(".").map(Number);
 
-  const new_version = `${major + 1}.0.0`;
+  const newVersion = `${major + 1}.0.0`;
 
-  save_new_pkg_jsons(new_version);
+  saveNewPkgJSONs(newVersion);
 }
 
-function throw_if_already_beta() {
-  const current_version = confirm_and_get_current_version();
+function throwIfAlreadyBeta() {
+  const currentVersion = confirmAndGetCurrentVersion();
 
-  if (current_version.includes("-")) {
+  if (currentVersion.includes("-")) {
     throw new Error("Current version already has a beta suffix.");
   }
 }
 
-function add_beta() {
-  throw_if_already_beta();
+function addBeta() {
+  throwIfAlreadyBeta();
 
-  const current_version = confirm_and_get_current_version();
+  const currentVersion = confirmAndGetCurrentVersion();
 
-  const [major, minor, patch] = current_version.split(".").map(Number);
+  const [major, minor, patch] = currentVersion.split(".").map(Number);
 
-  const new_version = `${major}.${minor}.${patch}-beta.0`;
+  const newVersion = `${major}.${minor}.${patch}-beta.0`;
 
-  save_new_pkg_jsons(new_version);
+  saveNewPkgJSONs(newVersion);
 }
 
-function throw_if_not_beta() {
-  const current_version = confirm_and_get_current_version();
+function throwIfNotBeta() {
+  const currentVersion = confirmAndGetCurrentVersion();
 
-  if (!current_version.includes("-")) {
+  if (!currentVersion.includes("-")) {
     throw new Error("Current version does not have a beta suffix.");
   }
 }
 
-function bump_beta() {
-  throw_if_not_beta();
+function bumpBeta() {
+  throwIfNotBeta();
 
-  const current_version = confirm_and_get_current_version();
+  const currentVersion = confirmAndGetCurrentVersion();
 
-  const [major, minor, patch, beta] = current_version
+  const [major, minor, patch, beta] = currentVersion
     .split(".")
     .map((v) => (v.includes("-") ? v.split("-")[0] : v))
     .map(Number);
 
-  const new_version = `${major}.${minor}.${patch}-beta.${beta + 1}`;
+  const newVersion = `${major}.${minor}.${patch}-beta.${beta + 1}`;
 
-  save_new_pkg_jsons(new_version);
+  saveNewPkgJSONs(newVersion);
 }
 
-function remove_beta() {
-  throw_if_not_beta();
+function removeBeta() {
+  throwIfNotBeta();
 
-  const current_version = confirm_and_get_current_version();
+  const currentVersion = confirmAndGetCurrentVersion();
 
-  const [major, minor, patch] = current_version
+  const [major, minor, patch] = currentVersion
     .split(".")
     .map((v) => (v.includes("-") ? v.split("-")[0] : v));
 
-  const new_version = `${major}.${minor}.${patch}`;
+  const newVersion = `${major}.${minor}.${patch}`;
 
-  save_new_pkg_jsons(new_version);
+  saveNewPkgJSONs(newVersion);
 }
 
-function set_version() {
+function setVersion() {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
 
-  confirm_and_get_current_version(true);
+  confirmAndGetCurrentVersion(true);
 
   new Promise((resolve) => {
     rl.question(`Enter new version: `, (answer) => {
       resolve(answer);
       rl.close();
     });
-  }).then((new_version) => {
-    save_new_pkg_jsons(new_version);
+  }).then((newVersion) => {
+    saveNewPkgJSONs(newVersion);
   });
 }
 
 export {
-  bump_to_new_patch,
-  bump_to_new_minor,
-  bump_to_new_major,
-  add_beta,
-  bump_beta,
-  remove_beta,
-  confirm_and_get_current_version,
-  set_version,
+  addBeta,
+  bumpBeta,
+  bumpToNewMajor,
+  bumpToNewMinor,
+  bumpToNewPatch,
+  confirmAndGetCurrentVersion,
+  removeBeta,
+  setVersion,
 };

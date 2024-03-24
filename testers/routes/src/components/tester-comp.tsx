@@ -1,18 +1,22 @@
-import type { PageProps } from "hwy";
+import { PageProps } from "hwy";
+import { useState } from "react";
 
-async function TesterComp({ Outlet, params, splatSegments }: PageProps) {
-  let pathname = new URL(import.meta.url).pathname;
-  pathname = pathname.split("/dist/pages")[1];
-  const is_splat = pathname.endsWith("$.js");
+function TesterComp({ Outlet, params, splatSegments, ...rest }: PageProps) {
+  const [randomColor] = useState(
+    "#" + Math.floor(Math.random() * 16777215).toString(16),
+  );
 
   return (
-    <div class="outlet-wrapper">
-      <div class="tester-comp-wrapper">
-        <p>Pathname: {pathname}</p>
+    <div
+      className="outlet-wrapper"
+      style={{
+        background: randomColor,
+      }}
+    >
+      <div className="tester-comp-wrapper">
+        <p>Splat Segments:{JSON.stringify(splatSegments)}</p>
 
-        {is_splat && <p>SPLAT! {JSON.stringify(splatSegments)}</p>}
-
-        {!is_splat && Object.keys(params).length ? (
+        {Object.keys(params).length ? (
           <p>Params: {JSON.stringify(params)}</p>
         ) : null}
 

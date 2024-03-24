@@ -1,52 +1,79 @@
-import path from "node:path";
+import { getHwyGlobal } from "../../../common/index.mjs";
 import { PUBLIC_URL_PREFIX } from "../setup.js";
-import { get_hwy_global } from "./get-hwy-global.js";
+import { dynamicNodePath } from "./url-polyfills.js";
 
-const hwy_global = get_hwy_global();
+const hwyGlobal = getHwyGlobal();
+
+export const DEV_BUNDLED_CSS_QUERY_PARAM =
+  "?NOTE_TO_DEV=this-will-be-hashed-and-cached-in-prod-just-like-your-client-entry-file";
+
+export const DEV_BUNDLED_CSS_LINK =
+  "/public/dist/standard-bundled.css" + DEV_BUNDLED_CSS_QUERY_PARAM;
 
 function getPublicUrl(url: string): string {
-  let hashed_url: string | undefined;
+  let hashedURL: string | undefined;
 
   if (url.startsWith("/")) url = url.slice(1);
   if (url.startsWith("./")) url = url.slice(2);
 
-  const public_map = hwy_global.get("public_map");
+  const publicMap = hwyGlobal.get("publicMap");
 
-  hashed_url = public_map?.[path.join("public", url)];
-
-  if (!hashed_url) {
-    throw new Error(`No hashed URL found for ${url}`);
+  if (!dynamicNodePath) {
+    throw new Error("dynamicNodePath is not defined");
   }
 
-  return "/" + hashed_url;
-}
+  hashedURL = publicMap?.[dynamicNodePath.join("public", url)];
 
-function get_original_public_url({
-  hashed_url,
-}: {
-  hashed_url: string;
-}): string {
-  const sliced_url = path.normalize(hashed_url.slice(1));
-
-  const reverse_public_map = hwy_global.get("public_reverse_map");
-
-  const original_url = reverse_public_map?.[sliced_url];
-
-  if (!original_url) {
-    throw new Error(`No original URL found for ${sliced_url}`);
+  if (!hashedURL) {
+    const noNeedToLogList = [
+      "dist/standard-bundled.css",
+      "dist/entry.client.js",
+      "favicon.ico",
+    ];
+    if (!noNeedToLogList.includes(url)) {
+      console.log("No hashed URL found for", url);
+    }
+    return "";
   }
 
-  return "./" + PUBLIC_URL_PREFIX + original_url;
+  if (hwyGlobal.get("isDev")) {
+    const normalizedURL = url.replace(/\\/g, "/");
+    if (normalizedURL === "dist/standard-bundled.css") {
+      return DEV_BUNDLED_CSS_LINK;
+    }
+  }
+
+  return "/" + hashedURL;
 }
 
-function get_serve_static_options() {
-  return {
-    rewriteRequestPath: (path: string) => {
-      return get_original_public_url({
-        hashed_url: path,
-      });
-    },
-  };
+function getOrigPublicURL({ hashedURL }: { hashedURL: string }): string {
+  if (!dynamicNodePath) {
+    throw new Error("dynamicNodePath is not defined");
+  }
+
+  const slicedURL = dynamicNodePath.normalize(hashedURL.slice(1));
+
+  if (hwyGlobal.get("isDev")) {
+    const normalizedSlicedURL = slicedURL.replace(/\\/g, "/");
+
+    if (normalizedSlicedURL.startsWith("public/dist/standard-bundled")) {
+      return "./" + "public/dist/standard-bundled.css";
+    }
+  }
+
+  if (slicedURL.includes("hwy_chunk__")) {
+    return "./" + PUBLIC_URL_PREFIX + slicedURL;
+  }
+
+  const reversePublicMap = hwyGlobal.get("publicReverseMap");
+
+  const origURL = reversePublicMap?.[slicedURL];
+
+  if (!origURL) {
+    throw new Error(`No original URL found for ${slicedURL}`);
+  }
+
+  return "./" + PUBLIC_URL_PREFIX + origURL;
 }
 
-export { getPublicUrl, get_serve_static_options, get_original_public_url };
+export { getOrigPublicURL, getPublicUrl };

@@ -1,31 +1,31 @@
 import { SPLAT_SEGMENT } from "../../../common/index.mjs";
 
-function get_match_strength({
+export function getMatchStrength({
   pattern,
   path,
 }: {
   pattern: string;
   path: string;
 }) {
-  const pattern_segments = pattern.split("/").filter(Boolean);
-  const real_segments = path.split("/").filter(Boolean);
+  const patternSegments = pattern.split("/").filter(Boolean);
+  const realSegments = path.split("/").filter(Boolean);
 
   let score = 0;
 
-  for (let i = 0; i < pattern_segments.length; i++) {
-    if (pattern_segments[i] === real_segments[i]) {
+  for (let i = 0; i < patternSegments.length; i++) {
+    if (patternSegments[i] === realSegments[i]) {
       // literal match
       score = score + 3;
       continue;
     }
 
-    if (pattern_segments[i] === SPLAT_SEGMENT) {
+    if (patternSegments[i] === SPLAT_SEGMENT) {
       // catch-all match
       score = score + 1;
       continue;
     }
 
-    if (pattern_segments[i].startsWith(":")) {
+    if (patternSegments[i].startsWith(":")) {
       // named dynamic segment match
       score = score + 2;
       continue;
@@ -33,17 +33,12 @@ function get_match_strength({
 
     return {
       score: 0,
-      realSegmentsLength: real_segments.length,
+      realSegmentsLength: realSegments.length,
     };
   }
 
   return {
     score,
-    realSegmentsLength: real_segments.length,
+    realSegmentsLength: realSegments.length,
   };
 }
-
-export {
-  // private
-  get_match_strength,
-};

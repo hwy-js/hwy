@@ -1,29 +1,31 @@
 {
   "name": "@hwy-js/utils",
-  "version": "0.7.2",
+  "version": "0.0.0-beta.69",
   "author": {
     "name": "Samuel J. Cook"
   },
   "license": "MIT",
   "description": "Various utilities for Hwy framework",
   "type": "module",
-  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./htmx": "./dist/htmx.js"
+  },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsup-node index.ts --format esm --dts",
-    "lint": "tsc",
-    "dev": "rm -rf dist && tsup-node index.ts --format esm --dts --watch --sourcemap",
+    "build": "rm -rf dist && tsup-node index.ts htmx.ts --format esm --dts",
+    "dev": "rm -rf dist && tsup-node index.ts htmx.ts --format esm --dts --watch",
     "publish-beta": "npm publish --tag beta",
     "publish-non-beta": "npm publish",
     "update-latest": "pnpm update --latest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc"
   },
   "devDependencies": {
-    "hono": "^3.10.1",
-    "tsup": "^7.2.0",
-    "typescript": "^5.2.2"
+    "h3": "^1.11.1",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.2"
   },
   "repository": {
     "type": "git",

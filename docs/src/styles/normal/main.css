@@ -1,0 +1,231 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --fg: #111;
+  --bg: #eee;
+  --mono-font-stack: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console,
+    monospace;
+  --sans-font-stack: -apple-system, BlinkMacSystemFont, avenir next, avenir,
+    segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial,
+    sans-serif;
+  --serif-font-stack: Iowan Old Style, Apple Garamond, Baskerville,
+    Times New Roman, Droid Serif, Times, Source Serif Pro, serif,
+    Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+  --topnav-height: 3rem;
+  --sidebar-width: 200px;
+  --sidebar-height: calc(100dvh - var(--topnav-height) - 1px);
+  --std-border: 1px solid #777;
+}
+
+@media screen and (prefers-color-scheme: dark) {
+  :root {
+    --fg: #eee;
+    --bg: #111;
+  }
+}
+
+html {
+  color: var(--fg);
+  background-color: var(--bg);
+  font-family: var(--sans-font-stack);
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+}
+
+pre {
+  overflow-x: auto;
+  background-color: #7772;
+  padding: 0.75rem;
+  border: var(--std-border);
+}
+
+code {
+  font-family: var(--mono-font-stack);
+  font-size: 90%;
+  background-color: #7773;
+  padding: 0.15rem 0.25rem;
+  tab-size: 1.75rem;
+  line-height: 1.5;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+#root > nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
+  border-right: var(--std-border);
+}
+
+@media screen and (max-width: 800px) {
+  #root > nav {
+    position: sticky;
+    top: 0;
+    background: black;
+    height: unset;
+    max-height: unset;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    border-right: none;
+  }
+}
+
+#sidebar {
+  list-style: none;
+  padding: 1rem;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #272727;
+  color: white;
+  a {
+    color: white;
+  }
+  height: var(--sidebar-height);
+  min-height: var(--sidebar-height);
+  max-height: var(--sidebar-height);
+  border-top: var(--std-border);
+}
+
+#root > main {
+  margin: 0 auto;
+  padding: 1rem;
+  padding-right: 2rem;
+  padding-left: calc(var(--sidebar-width) + 2rem);
+  max-width: 1280px;
+}
+
+@media screen and (max-width: 800px) {
+  #root > main {
+    padding: 1rem 1.5rem 1.5rem;
+  }
+  #sidebar {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    overflow-y: auto;
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    border-top: none;
+    border-left: var(--std-border);
+  }
+}
+
+a {
+  color: var(--fg);
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+  text-decoration-color: #777;
+}
+
+.logo-wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+
+#logo h1 {
+  font-family: var(--mono-font-stack);
+  font-size: 1rem;
+  margin: 0;
+}
+
+#logo {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: black;
+  color: white;
+  text-decoration: none;
+  height: var(--topnav-height);
+}
+@media screen and (max-width: 800px) {
+  #logo {
+    width: unset;
+    padding: 0 1.25rem;
+    border-right: var(--std-border);
+  }
+}
+
+a:has(#site-h1:hover) {
+  text-decoration-color: black;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--serif-font-stack);
+}
+
+p {
+  line-height: 1.5;
+}
+
+.mobile-only {
+  display: none !important;
+}
+@media screen and (max-width: 800px) {
+  .mobile-only {
+    display: unset !important;
+  }
+  .desktop-only {
+    display: none !important;
+  }
+  nav {
+    border-bottom: var(--std-border);
+  }
+}
+
+.menu-icon {
+  background: none;
+  display: flex;
+  outline: none;
+  border: none;
+  width: var(--topnav-height);
+  height: var(--topnav-height);
+  justify-content: center;
+  align-items: center;
+  background: black;
+  color: white;
+  padding: 0;
+  margin: 0;
+  border-left: var(--std-border);
+}
+
+.menu-icon:hover {
+  background: #171717;
+}
+
+.unmounted {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.mounted {
+  opacity: 1;
+  pointer-events: unset;
+  transition: opacity 0.2s ease-in-out;
+}

@@ -1,3 +1,3 @@
-import { bump_beta } from "./utils.js";
+import { bumpBeta } from "./utils.js";
 
-bump_beta();
+bumpBeta();

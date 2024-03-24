@@ -1,3 +1,3 @@
-import { remove_beta } from "./utils.js";
+import { removeBeta } from "./utils.js";
 
-remove_beta();
+removeBeta();

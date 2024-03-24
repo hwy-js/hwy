@@ -1,0 +1,14 @@
+# standard exclusions
+node_modules
+
+# build artifacts
+dist
+public/dist
+
+# environment files
+.env
+.env.*
+!env.example
+
+# tailwind artifacts
+src/styles/normal/tw-output.css

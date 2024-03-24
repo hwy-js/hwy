@@ -1,35 +1,39 @@
 {
   "name": "hwy",
-  "version": "0.7.2",
+  "version": "0.0.0-beta.69",
   "author": {
     "name": "Samuel J. Cook"
   },
   "license": "MIT",
-  "description": "Simple, lightweight, and flexible web framework, built on Hono and HTMX.",
+  "description": "Simple, lightweight, and flexible web framework.",
   "type": "module",
-  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "rm -rf dist && tsup-node index.ts --format esm --dts",
-    "lint": "tsc",
-    "dev": "rm -rf dist && tsup-node index.ts --format esm --dts --watch --sourcemap",
+    "dev": "rm -rf dist && tsup-node index.ts --format esm --dts --watch",
     "publish-beta": "npm publish --tag beta",
     "publish-non-beta": "npm publish",
     "update-latest": "pnpm update --latest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "devalue": "^4.3.2"
   },
   "devDependencies": {
-    "@hono/node-server": "^1.2.3",
     "@hwy-js/build": "workspace:*",
     "@hwy-js/dev": "workspace:*",
-    "@types/node": "^20.9.0",
-    "hono": "^3.10.1",
-    "tsup": "^7.2.0"
-  },
-  "peerDependencies": {
-    "hono": "^3.10.0"
+    "@types/node": "^20.11.28",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "h3": "^1.11.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsup": "^8.0.2"
   },
   "repository": {
     "type": "git",
@@ -46,14 +50,16 @@
     "metaframework",
     "web",
     "typescript",
-    "htmx",
-    "hono",
+    "unjs",
+    "h3",
     "router",
     "nested",
     "routing",
     "jsx",
     "tsx",
     "nextjs",
-    "remix"
-  ]
+    "remix",
+    "react"
+  ],
+  "sideEffects": false
 }

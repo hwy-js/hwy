@@ -1,64 +1,68 @@
-import path from "node:path";
-import fs from "node:fs";
 import crypto from "node:crypto";
+import fs from "node:fs";
+import nodePath from "node:path";
 import readdirp from "readdirp";
-import esbuild from "esbuild";
-import { HWY_GLOBAL_KEYS, SPLAT_SEGMENT } from "../../common/index.mjs";
-import { smart_normalize } from "./smart-normalize.js";
+import {
+  HWY_GLOBAL_KEYS,
+  Path,
+  PathType,
+  SPLAT_SEGMENT,
+} from "../../common/index.mjs";
+import { getHwyConfig } from "./get-hwy-config.js";
 
-const permitted_extensions = [
-  "js",
-  "jsx",
-  "ts",
-  "tsx",
-  "mjs",
-  "cjs",
-  "mts",
-  "cts",
-];
+const permittedExts = ["js", "jsx", "ts", "tsx", "mjs", "cjs", "mts", "cts"];
 
-type PathType =
-  | "ultimate-catch"
-  | "index"
-  | "static-layout"
-  | "dynamic-layout"
-  | "non-ultimate-splat";
+const hwyConfig = await getHwyConfig();
 
-async function walk_pages() {
-  const paths: {
-    // ultimately public
-    importPath: string;
-    path: string;
-    segments: Array<string | null>;
-    pathType: PathType;
-    hasSiblingClientFile: boolean;
-  }[] = [];
+type FilesList = Array<{
+  path: string;
+  importPathWithOrigExt: string;
+}>;
 
-  for await (const entry of readdirp(path.resolve("./src/pages"))) {
-    const is_page_file = entry.path.includes(".page.");
-    const is_client_file = entry.path.includes(".client.");
+async function walkPages(): Promise<{
+  paths: Array<Path>;
+  pageFilesList: FilesList;
+  clientFilesList: FilesList;
+  serverFilesList: FilesList;
+}> {
+  let pageFilesList: FilesList = [];
+  let clientFilesList: FilesList = [];
+  let serverFilesList: FilesList = [];
 
-    if (!is_page_file && !is_client_file) {
+  const paths: Paths = [];
+
+  for await (const entry of readdirp(nodePath.resolve("./src/pages"))) {
+    const isPageFile = entry.path.includes(".page.");
+    const isClientFile = entry.path.includes(".client.");
+    const isServerFile = Boolean(
+      hwyConfig.useDotServerFiles && entry.path.includes(".server."),
+    );
+
+    if (!isPageFile && !isClientFile && !isServerFile) {
       continue;
     }
 
     const ext = entry.path.split(".").pop();
 
-    if (!ext || !permitted_extensions.includes(ext)) {
+    if (!ext || !permittedExts.includes(ext)) {
       continue;
     }
 
-    const pre_ext_delineator = is_page_file ? ".page" : ".client";
+    const preExtDelineator = isPageFile
+      ? ".page"
+      : isServerFile
+        ? ".server"
+        : ".client";
 
-    const _path = entry.path
+    const path = entry.path
       .replace("." + ext, "")
-      .replace(pre_ext_delineator, "");
+      .replace(preExtDelineator, "");
 
-    const segments_init = _path.split(path.sep);
+    const segmentsInit = path.split(nodePath.sep);
 
-    let is_index = false;
+    let isIndex = false;
 
-    const segments = segments_init
+    const segments = segmentsInit
       .filter((segment) => {
         if (segment.startsWith("__") && !segment.includes(".page.")) {
           return false;
@@ -66,180 +70,226 @@ async function walk_pages() {
         return true;
       })
       .map((segment) => {
-        let new_segment: string | null = segment.replace("$", ":");
+        let newSegment: string | null = segment.replace("$", ":");
 
-        let is_splat = false;
+        let isSplat = false;
 
-        if (new_segment === ":") {
-          new_segment = SPLAT_SEGMENT;
-          is_splat = true;
+        if (newSegment === ":") {
+          newSegment = SPLAT_SEGMENT;
+          isSplat = true;
         }
 
-        if (new_segment === "_index") {
-          new_segment = null;
-          is_index = true;
+        if (newSegment === "_index") {
+          newSegment = null;
+          isIndex = true;
         }
 
         type SegmentType = "normal" | "index" | "splat" | "dynamic";
 
-        let segment_type: SegmentType = "normal";
+        let segmentType: SegmentType = "normal";
 
-        if (is_splat) {
-          segment_type = "splat";
-        } else if (new_segment?.startsWith(":")) {
-          segment_type = "dynamic";
-        } else if (is_index) {
-          segment_type = "index";
+        if (isSplat) {
+          segmentType = "splat";
+        } else if (newSegment?.startsWith(":")) {
+          segmentType = "dynamic";
+        } else if (isIndex) {
+          segmentType = "index";
         }
 
         return {
-          segment: new_segment || undefined,
-          segmentType: segment_type,
+          segment: newSegment || undefined,
+          segmentType: segmentType,
         };
       });
 
-    const import_path_with_orig_ext =
-      path.join(process.cwd(), "src/pages/" + _path) +
-      pre_ext_delineator +
+    const importPathWithOrigExt =
+      nodePath.join(process.cwd(), "src/pages/" + path) +
+      preExtDelineator +
       ("." + ext);
 
-    let path_to_use = "/" + segments.map((x) => x.segment).join("/");
+    let pathToUse = "/" + segments.map((x) => x.segment).join("/");
 
-    if (path_to_use !== "/" && path_to_use.endsWith("/")) {
-      path_to_use = path_to_use.slice(0, -1);
+    if (pathToUse !== "/" && pathToUse.endsWith("/")) {
+      pathToUse = pathToUse.slice(0, -1);
     }
 
-    if (is_page_file) {
-      let has_sibling_client_file = false;
+    if (isPageFile || isServerFile) {
+      let hasSiblingPageFile = false;
+      let hasSiblingClientFile = false;
+      let hasSiblingServerFile = false;
 
       for (const sibling of await fs.promises.readdir(
-        path.dirname(import_path_with_orig_ext),
+        nodePath.dirname(importPathWithOrigExt),
       )) {
-        const filename = path.basename(_path);
+        const filename = nodePath.basename(path);
 
         if (sibling.includes(filename + ".client.")) {
-          has_sibling_client_file = true;
+          hasSiblingClientFile = true;
+        }
+
+        if (
+          isPageFile &&
+          hwyConfig.useDotServerFiles &&
+          sibling.includes(filename + ".server.")
+        ) {
+          hasSiblingServerFile = true;
+
+          break;
+        }
+
+        if (
+          isServerFile &&
+          hwyConfig.useDotServerFiles &&
+          sibling.includes(filename + ".page.")
+        ) {
+          hasSiblingPageFile = true;
+
           break;
         }
       }
 
-      let path_type: PathType = "static-layout";
+      let pathType: PathType = "static-layout";
 
-      if (is_index) {
-        path_type = "index";
+      if (isIndex) {
+        pathType = "index";
       } else if (segments[segments.length - 1].segmentType === "splat") {
-        path_type = "non-ultimate-splat";
+        pathType = "non-ultimate-splat";
       } else if (segments[segments.length - 1].segmentType === "dynamic") {
-        path_type = "dynamic-layout";
+        pathType = "dynamic-layout";
       }
 
-      paths.push({
-        importPath: smart_normalize(path.join("pages/", _path + ".js")),
-        path: path_to_use,
-        segments: segments.map((x) => x.segment || null),
-        pathType: path_type,
-        hasSiblingClientFile: has_sibling_client_file,
-      });
+      if (isServerFile && !hasSiblingPageFile) {
+        paths.push({
+          importPath: "pages/" + path + ".server.js",
+          path: pathToUse,
+          segments: segments.map((x) => x.segment || null),
+          pathType: pathType,
+          hasSiblingClientFile: hasSiblingClientFile,
+          hasSiblingServerFile: false,
+          isServerFile: true,
+        });
+      }
+
+      if (isPageFile) {
+        paths.push({
+          importPath: "pages/" + path + ".page.js",
+          path: pathToUse,
+          segments: segments.map((x) => x.segment || null),
+          pathType: pathType,
+          hasSiblingClientFile: hasSiblingClientFile,
+          hasSiblingServerFile: hasSiblingServerFile,
+          isServerFile: false,
+        });
+      }
     }
 
-    fs.mkdirSync(path.resolve(`./public/dist/pages/`), { recursive: true });
+    await fs.promises.mkdir(nodePath.resolve(`./public/dist/`), {
+      recursive: true,
+    });
 
     try {
-      await esbuild.build({
-        entryPoints: [import_path_with_orig_ext],
-        bundle: true,
-        outfile: path.resolve(
-          `./${is_client_file ? "public/" : ""}dist/pages/` + _path + ".js",
-        ),
-        treeShaking: true,
-        platform: is_client_file ? "browser" : "node",
-        packages: is_client_file ? undefined : "external",
-        format: "esm",
-        minify: is_client_file,
-      });
+      if (isServerFile) {
+        serverFilesList.push({ path, importPathWithOrigExt });
+      }
+
+      if (isPageFile) {
+        pageFilesList.push({ path, importPathWithOrigExt });
+      }
+
+      if (isClientFile) {
+        clientFilesList.push({ path, importPathWithOrigExt });
+      }
     } catch (e) {
       console.error(e);
     }
   }
 
-  return paths;
+  return {
+    paths,
+    pageFilesList,
+    clientFilesList,
+    serverFilesList,
+  };
 }
 
-async function write_paths_to_file() {
-  const paths = await walk_pages();
+async function writePathsToDisk() {
+  const { paths, pageFilesList, clientFilesList, serverFilesList } =
+    await walkPages();
 
-  fs.writeFileSync(
-    path.join(process.cwd(), "dist", "paths.js"),
+  await fs.promises.writeFile(
+    nodePath.join(process.cwd(), "dist", "paths.js"),
     `export const ${HWY_GLOBAL_KEYS.paths} = ${JSON.stringify(paths)}`,
   );
+
+  return { pageFilesList, clientFilesList, serverFilesList };
 }
 
-async function generate_file_hash(file_path: string): Promise<string> {
-  const content = await fs.promises.readFile(file_path);
-  const hash = crypto.createHash("sha256").update(content).digest("hex");
-  return hash.slice(0, 12); // Take the first 12 characters for brevity.
+function sha1Short(content: crypto.BinaryLike) {
+  return crypto.createHash("sha1").update(content).digest("hex").slice(0, 20);
 }
 
-async function generate_public_file_map() {
-  const src_path = path.resolve("./public");
+async function genFileHash(filepath: string): Promise<string> {
+  const content = await fs.promises.readFile(filepath);
+  return sha1Short(content);
+}
 
-  const file_map: { [original: string]: string } = {};
-  const reverse_file_map: { [hashed: string]: string } = {};
+async function genPublicFileMap() {
+  const srcPath = nodePath.resolve("./public");
 
-  async function traverse(src_dir: string): Promise<void> {
-    const entries = await fs.promises.readdir(src_dir, { withFileTypes: true });
+  const filemap: { [original: string]: string } = {};
+  const reverseFilemap: { [hashed: string]: string } = {};
+
+  async function traverse(srcDir: string): Promise<void> {
+    const entries = await fs.promises.readdir(srcDir, { withFileTypes: true });
 
     const tasks: Promise<void>[] = entries.map(async (entry) => {
-      const src_entry = path.join(src_dir, entry.name);
-      const relative_entry = path.join(
+      const srcEntry = nodePath.join(srcDir, entry.name);
+      const relativeEntry = nodePath.join(
         "public",
-        path.relative(src_path, src_entry),
+        nodePath.relative(srcPath, srcEntry),
       );
 
       if (entry.isDirectory()) {
-        return traverse(src_entry);
+        return traverse(srcEntry);
       } else {
-        const hash = await generate_file_hash(src_entry);
-        const extname = path.extname(entry.name);
-        const basename = path.basename(entry.name, extname);
-        const hashed_filename = `${basename}.${hash}${extname}`;
-        const hashed_relative_path = path.join(
+        const hash = await genFileHash(srcEntry);
+        const extname = nodePath.extname(entry.name);
+        const hashedFilename = `${hash}${extname}`;
+        const hashedRelativePath = nodePath.join(
           "public",
-          path.relative(
-            src_path,
-            src_entry.replace(basename + extname, hashed_filename),
+          nodePath.relative(
+            srcPath,
+            srcEntry.replace(entry.name, hashedFilename),
           ),
         );
-        file_map[relative_entry] = hashed_relative_path;
-        reverse_file_map[hashed_relative_path] = relative_entry;
+        filemap[relativeEntry] = hashedRelativePath;
+        reverseFilemap[hashedRelativePath] = relativeEntry;
       }
     });
 
     await Promise.all(tasks);
   }
 
-  await traverse(src_path);
+  await traverse(srcPath);
 
-  const map_file_path = path.resolve("./dist/public-map.js");
-  const reverse_map_file_path = path.resolve("./dist/public-reverse-map.js");
+  const mapFilepath = nodePath.resolve("./dist/public-map.js");
+  const reverseMapFilepath = nodePath.resolve("./dist/public-reverse-map.js");
 
   await Promise.all([
     fs.promises.writeFile(
-      map_file_path,
-      `export const ${HWY_GLOBAL_KEYS.public_map} = ${JSON.stringify(
-        file_map,
-      )};`,
+      mapFilepath,
+      `export const ${HWY_GLOBAL_KEYS.publicMap} = ${JSON.stringify(filemap)};`,
       "utf-8",
     ),
     fs.promises.writeFile(
-      reverse_map_file_path,
-      `export const ${HWY_GLOBAL_KEYS.public_reverse_map} = ${JSON.stringify(
-        reverse_file_map,
+      reverseMapFilepath,
+      `export const ${HWY_GLOBAL_KEYS.publicReverseMap} = ${JSON.stringify(
+        reverseFilemap,
       )};`,
       "utf-8",
     ),
   ]);
 }
 
-export { generate_file_hash, write_paths_to_file, generate_public_file_map };
-export type Paths = Awaited<ReturnType<typeof walk_pages>>;
+export { genPublicFileMap, sha1Short, writePathsToDisk };
+export type Paths = Awaited<ReturnType<typeof walkPages>>["paths"];

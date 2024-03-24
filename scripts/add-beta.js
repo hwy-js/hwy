@@ -1,3 +1,3 @@
-import { add_beta } from "./utils.js";
+import { addBeta } from "./utils.js";
 
-add_beta();
+addBeta();

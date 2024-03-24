@@ -1,3 +1,3 @@
-import { set_version } from "./utils.js";
+import { setVersion } from "./utils.js";
 
-set_version();
+setVersion();

@@ -1,3 +1,3 @@
-import { to_latest } from "./utils.js";
+import { toLatest } from "./utils.js";
 
-to_latest();
+toLatest();

@@ -1,8 +1,8 @@
 import { SPLAT_SEGMENT } from "../../../common/index.mjs";
 import type { SemiDecoratedPath } from "./get-matching-path-data.js";
 
-function get_matching_paths_internal(__paths: Array<SemiDecoratedPath>) {
-  let paths = __paths.filter((x) => {
+export function getMatchingPathsInternal(pathsArg: Array<SemiDecoratedPath>) {
+  let paths = pathsArg.filter((x) => {
     // only continue if the path matches
     if (!x.matches) {
       return false;
@@ -13,14 +13,13 @@ function get_matching_paths_internal(__paths: Array<SemiDecoratedPath>) {
       return true;
     }
 
-    const index_adjusted_real_segments_length =
+    const indexAdjustedRealSegmentsLength =
       x.pathType === "index" ? x.realSegmentsLength + 1 : x.realSegmentsLength;
 
     // make sure any remaining matches are not longer than the path itself
-    const should_move_on =
-      x.segments.length <= index_adjusted_real_segments_length;
+    const shouldMoveOn = x.segments.length <= indexAdjustedRealSegmentsLength;
 
-    if (!should_move_on) {
+    if (!shouldMoveOn) {
       return false;
     }
 
@@ -30,11 +29,11 @@ function get_matching_paths_internal(__paths: Array<SemiDecoratedPath>) {
       return true;
     }
 
-    const truthy_segments_length = x.segments.filter(Boolean).length;
+    const truthySegmentsLength = x.segments.filter(Boolean).length;
 
-    const path_segments_length = x.path.split("/").filter(Boolean).length;
+    const pathSegmentsLength = x.path.split("/").filter(Boolean).length;
 
-    if (truthy_segments_length === path_segments_length) {
+    if (truthySegmentsLength === pathSegmentsLength) {
       return true;
     }
 
@@ -46,16 +45,16 @@ function get_matching_paths_internal(__paths: Array<SemiDecoratedPath>) {
     paths = paths.filter((x) => x.pathType !== "ultimate-catch");
   }
 
-  let splat_segments: string[] = [];
+  let splatSegments: string[] = [];
 
   // if only one match now, return it
   if (paths.length === 1) {
     if (paths[0].pathType === "ultimate-catch") {
-      splat_segments = paths[0].path.split("/").filter(Boolean);
+      splatSegments = paths[0].path.split("/").filter(Boolean);
     }
 
     return {
-      splat_segments,
+      splatSegments,
       paths,
     };
   }
@@ -63,134 +62,177 @@ function get_matching_paths_internal(__paths: Array<SemiDecoratedPath>) {
   // now we only have real child paths
 
   // these are essentially any matching static layout routes
-  const definite_matches = paths.filter((x) => x.pathType === "static-layout");
+  const definiteMatches = paths.filter((x) => x.pathType === "static-layout");
 
-  const highest_scores_by_segment_length_of_definite_matches =
-    get_highest_scores_by_segment_length(definite_matches);
+  const highestScoresBySegmentLengthOfDefiniteMatches =
+    getHighestScoresBySegmentLength(definiteMatches);
 
   // the "maybe matches" need to compete with each other
   // they also need some more complicated logic
-  const maybe_matches: SemiDecoratedPath[] = [];
-  const grouped_by_segment_length: Record<number, SemiDecoratedPath[]> = {};
+  const groupedBySegmentLength: Record<number, SemiDecoratedPath[]> = {};
 
   for (const x of paths) {
     if (x.pathType !== "static-layout") {
-      const segment_length = x.segments.length;
+      const segmentLength = x.segments.length;
 
-      const highest_score_for_this_segment_length =
-        highest_scores_by_segment_length_of_definite_matches[segment_length];
+      const highestScoreForThisSegmentLength =
+        highestScoresBySegmentLengthOfDefiniteMatches[segmentLength];
 
       if (
-        highest_score_for_this_segment_length === undefined ||
-        x.score > highest_score_for_this_segment_length
+        highestScoreForThisSegmentLength === undefined ||
+        x.score > highestScoreForThisSegmentLength
       ) {
-        if (!grouped_by_segment_length[segment_length]) {
-          grouped_by_segment_length[segment_length] = [];
+        if (!groupedBySegmentLength[segmentLength]) {
+          groupedBySegmentLength[segmentLength] = [];
         }
-        grouped_by_segment_length[segment_length].push(x);
-        maybe_matches.push(x);
+        groupedBySegmentLength[segmentLength].push(x);
       }
     }
   }
 
-  const sorted_grouped_by_segment_length = Object.entries(
-    grouped_by_segment_length,
-  )
+  const sortedGroupedBySegmentLength = Object.entries(groupedBySegmentLength)
     .sort(([a], [b]) => Number(a) - Number(b))
     .map(([_, paths]) => paths);
 
-  const xformed_maybes: SemiDecoratedPath[] = [];
+  const xformedMaybes: SemiDecoratedPath[] = [];
 
-  let wild_card_splat: SemiDecoratedPath | null = null;
+  let wildcardSplat: SemiDecoratedPath | null = null;
 
-  for (const paths of sorted_grouped_by_segment_length) {
+  for (const paths of sortedGroupedBySegmentLength) {
     let winner = paths[0];
-    let highest_score = winner.score;
-    let index_candidate: SemiDecoratedPath | null = null;
+
+    let highestScore = winner.score;
+    let indexCandidate: SemiDecoratedPath | null = null;
 
     for (const path of paths) {
       if (
         path.pathType === "index" &&
         path.realSegmentsLength < path.segments.length
       ) {
-        index_candidate = path;
+        if (indexCandidate) {
+          if (path.score > indexCandidate.score) {
+            indexCandidate = path;
+          }
+        } else {
+          indexCandidate = path;
+        }
       }
-      if (path.score > highest_score) {
-        highest_score = path.score;
+
+      if (path.score > highestScore) {
+        highestScore = path.score;
         winner = path;
       }
     }
 
-    if (index_candidate) {
-      winner = index_candidate;
+    if (indexCandidate) {
+      winner = indexCandidate;
     }
 
     const splat = paths.find((x) => x.pathType === "non-ultimate-splat");
 
     if (splat) {
-      if (!wild_card_splat || splat.score > wild_card_splat.score) {
-        wild_card_splat = splat;
+      if (!wildcardSplat || splat.score > wildcardSplat.score) {
+        wildcardSplat = splat;
       }
 
-      splat_segments = get_splat_segments_from_winning_path(winner);
+      splatSegments = getSplatSegmentsFromWinningPath(winner);
     }
 
-    xformed_maybes.push(winner);
+    // ok, problem
+    // in the situation where we have a dynamic folder name with an index file within,
+    // we need to make sure that other static-layout paths win over it
+    // that's what this code is for
+
+    const winnerIsDynamicIndex = Boolean(
+      winner.pathType === "index" && winner.segments.at(-2)?.startsWith(":"),
+    );
+
+    const definiteMatchesShouldOverride =
+      winnerIsDynamicIndex &&
+      Boolean(
+        definiteMatches.find((x) => {
+          const a = x.pathType === "static-layout";
+          const b = x.realSegmentsLength === winner.realSegmentsLength;
+          const c = x.segments.at(-1) !== winner.segments.at(-2);
+          const d = x.score > winner.score;
+          return a && b && c && d;
+        }),
+      );
+
+    if (!definiteMatchesShouldOverride) {
+      xformedMaybes.push(winner);
+    }
   }
 
-  const maybe_final_paths = [...definite_matches, ...xformed_maybes].sort(
+  let maybeFinalPaths = [...definiteMatches, ...xformedMaybes].sort(
     (a, b) => a.segments.length - b.segments.length,
   );
 
   // if anything left
-  if (maybe_final_paths.length) {
-    const last_path = maybe_final_paths[maybe_final_paths.length - 1];
+  if (maybeFinalPaths.length) {
+    const lastPath = maybeFinalPaths[maybeFinalPaths.length - 1];
 
     // get index-adjusted segments length
-    const last_path_segments_length_constructive =
-      last_path.pathType === "index"
-        ? last_path.segments.length - 1
-        : last_path.segments.length;
+    const lastPathSegmentsLengthConstructive =
+      lastPath.pathType === "index"
+        ? lastPath.segments.length - 1
+        : lastPath.segments.length;
 
-    const splat_too_far_out =
-      last_path_segments_length_constructive > last_path.realSegmentsLength;
+    const splatIsTooFarOut =
+      lastPathSegmentsLengthConstructive > lastPath.realSegmentsLength;
 
-    const splat_needed =
-      last_path_segments_length_constructive < last_path.realSegmentsLength;
+    const splatIsNeeded =
+      lastPathSegmentsLengthConstructive < lastPath.realSegmentsLength;
 
-    const not_a_splat = last_path.pathType !== "non-ultimate-splat";
+    const isNotASplat = lastPath.pathType !== "non-ultimate-splat";
 
-    const we_need_a_different_splat =
-      splat_too_far_out || (splat_needed && not_a_splat);
+    const weNeedADifferentSplat =
+      splatIsTooFarOut || (splatIsNeeded && isNotASplat);
 
-    if (we_need_a_different_splat && wild_card_splat) {
-      maybe_final_paths[maybe_final_paths.length - 1] = wild_card_splat;
+    if (weNeedADifferentSplat && wildcardSplat) {
+      maybeFinalPaths[maybeFinalPaths.length - 1] = wildcardSplat;
 
-      splat_segments = get_splat_segments_from_winning_path(wild_card_splat);
+      splatSegments = getSplatSegmentsFromWinningPath(wildcardSplat);
     }
 
-    if (we_need_a_different_splat && !wild_card_splat) {
+    if (weNeedADifferentSplat && !wildcardSplat) {
       return {
-        splat_segments: paths[0].path.split("/").filter(Boolean),
-        paths: __paths.filter(
+        splatSegments: paths[0].path.split("/").filter(Boolean),
+        paths: pathsArg.filter(
           (x) => x.matches && x.pathType === "ultimate-catch",
         ),
       };
     }
   }
 
+  // if a dynamic layout is adjacent and before an index, we need to remove it
+  // IF the index does not share the same dynamic segment
+  for (let i = 0; i < maybeFinalPaths.length; i++) {
+    const current = maybeFinalPaths[i];
+    const next = maybeFinalPaths[i + 1];
+
+    if (current.pathType === "dynamic-layout" && next?.pathType === "index") {
+      const currentDynamicSegment = current.segments.at(-1);
+      const nextDynamicSegment = next.segments.at(-2);
+
+      if (currentDynamicSegment !== nextDynamicSegment) {
+        maybeFinalPaths.splice(i, 1);
+      }
+    }
+  }
+
   return {
-    splat_segments,
-    paths: maybe_final_paths,
+    splatSegments,
+    paths: maybeFinalPaths,
   };
 }
 
-function get_highest_scores_by_segment_length(matches: SemiDecoratedPath[]) {
+function getHighestScoresBySegmentLength(matches: SemiDecoratedPath[]) {
   return matches.reduce(
     (acc, x) => {
-      const segment_length = x.segments.length;
-      if (acc[segment_length] == null || x.score > acc[segment_length]) {
-        acc[segment_length] = x.score;
+      const segmentLength = x.segments.length;
+      if (acc[segmentLength] == null || x.score > acc[segmentLength]) {
+        acc[segmentLength] = x.score;
       }
       return acc;
     },
@@ -198,16 +240,14 @@ function get_highest_scores_by_segment_length(matches: SemiDecoratedPath[]) {
   );
 }
 
-function get_splat_segments_from_winning_path(winner: SemiDecoratedPath) {
+function getSplatSegmentsFromWinningPath(winner: SemiDecoratedPath) {
   const data = winner.path.split("/").filter(Boolean);
 
-  const number_of_non_splat_segments = winner.segments.filter((x) => {
+  const numOfNonSplatSegments = winner.segments.filter((x) => {
     return x !== SPLAT_SEGMENT;
   }).length;
 
-  const number_of_splat_segments = data.length - number_of_non_splat_segments;
+  const numOfSplatSegments = data.length - numOfNonSplatSegments;
 
-  return data.slice(data.length - number_of_splat_segments, data.length);
+  return data.slice(data.length - numOfSplatSegments, data.length);
 }
-
-export { get_matching_paths_internal };

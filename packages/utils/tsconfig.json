@@ -5,10 +5,10 @@
     "moduleResolution": "NodeNext",
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "noImplicitAny": true,
     "skipLibCheck": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true
+    "noEmit": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx"
   },
   "exclude": ["node_modules", "dist"]
 }

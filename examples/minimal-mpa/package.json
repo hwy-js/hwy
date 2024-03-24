@@ -1,0 +1,26 @@
+{
+  "name": "hwy-example-minimal-mpa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc && hwy-build",
+    "start": "node dist/main.js",
+    "dev": "hwy-dev-serve",
+    "update-latest": "pnpm update --latest"
+  },
+  "dependencies": {
+    "h3": "^1.11.1",
+    "hwy": "workspace:*",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@hwy-js/build": "workspace:*",
+    "@hwy-js/dev": "workspace:*",
+    "@hwy-js/utils": "workspace:*",
+    "@types/node": "^20.11.28",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "typescript": "^5.4.2"
+  }
+}

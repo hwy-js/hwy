@@ -1,3 +1,3 @@
-import { bump_to_new_patch } from "./utils.js";
+import { bumpToNewPatch } from "./utils.js";
 
-bump_to_new_patch();
+bumpToNewPatch();
